@@ -565,19 +565,6 @@ def guardian_page(title, description, detector, samples, label):
 st.sidebar.title("🛡️ SchoolShield")
 st.sidebar.caption("One Platform. Three Layers of Protection.")
 
-page = st.sidebar.radio(
-    "NAVIGATION",
-    [
-        "Dashboard",
-        "Phishing Guardian",
-        "Cyberbullying Guardian",
-        "Privacy Guardian",
-        "Performance Lab",
-        "Independent Test Lab"
-    ]
-)
-st.sidebar.markdown("---")
-
 developer_mode = st.sidebar.toggle(
     "🛠️ Developer Mode",
     value=False,
@@ -585,7 +572,27 @@ developer_mode = st.sidebar.toggle(
 )
 
 st.sidebar.markdown("---")
+
+navigation_options = [
+    "Dashboard",
+    "Phishing Guardian",
+    "Cyberbullying Guardian",
+    "Privacy Guardian",
+    "Performance Lab"
+]
+
+if developer_mode:
+    navigation_options.append("Independent Test Lab")
+
+page = st.sidebar.radio(
+    "NAVIGATION",
+    navigation_options
+)
+
+st.sidebar.markdown("---")
 st.sidebar.caption("Student-built educational prototype")
+
+
 
 
 # ---------------- DASHBOARD ----------------
@@ -697,7 +704,17 @@ elif page == "Performance Lab":
 
 
 
-# ---------------- INDEPENDENT TEST LAB ----------------
+tems():
+        metrics, df = evaluate_guardian(tests, detector, name)
+        rows.append({"Guardian": name, **metrics})
+        detailed.append((name, metrics, df))
+
+    st.markdown("---")
+    st.subheader("Challenge Performance Comparison")
+
+    summary = pd.DataFrame(rows)
+
+    columns = [# ---------------- INDEPENDENT TEST LAB ----------------
 
 elif page == "Independent Test Lab":
     st.title("🧪 SchoolShield Hard Challenge Lab")
@@ -721,17 +738,7 @@ elif page == "Independent Test Lab":
     rows = []
     detailed = []
 
-    for name, (tests, detector) in fresh_tests.items():
-        metrics, df = evaluate_guardian(tests, detector, name)
-        rows.append({"Guardian": name, **metrics})
-        detailed.append((name, metrics, df))
-
-    st.markdown("---")
-    st.subheader("Challenge Performance Comparison")
-
-    summary = pd.DataFrame(rows)
-
-    columns = [
+    for name, (tests, detector) in fresh_tests.i
         "Guardian", "Total Tests", "Accuracy", "Precision",
         "Recall", "F1 Score", "False Alarms", "Missed Warnings"
     ]
