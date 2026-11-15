@@ -126,6 +126,16 @@ def detect_phishing(message):
             r"\b(verify|verification|confirm)\b.{0,60}\b(your|personal|account|login)?\s*(details|information|identity)\b",
             "Requests verification of personal or account details"
         )
+        
+        (
+            r"\b(account|school account|profile|access)\b.{0,80}\b(deactivation|deactivated|disable|disabled|suspend|suspended|termination)\b",
+            "Warns about possible account deactivation or suspension"
+        ),
+        (
+            r"\b(security check|security verification|complete a check|keep your access|maintain access|avoid deactivation)\b",
+            "Requests a security check to maintain account access"
+        ),
+
     ]
 
     for pattern, reason in rules:
@@ -190,11 +200,27 @@ def detect_phishing(message):
         if reason not in reasons:
             reasons.append(reason)
 
+        account_deactivation_pressure = (
+        matches(
+            r"\b(account|school account|profile|access)\b",
+            text
+        )
+        and matches(
+            r"\b(deactivation|deactivated|disable|disabled|suspend|suspended|termination)\b",
+            text
+        )
+        and matches(
+            r"\b(security check|security verification|complete a check|verify)\b",
+            text
+        )
+    )
+
     suspicious = (
         sensitive_request
         or payment_pressure
         or verification_link
         or account_verification_pressure
+        or account_deactivation_pressure
         or len(reasons) >= 2
     )
 
