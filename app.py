@@ -576,6 +576,13 @@ page = st.sidebar.radio(
         "Independent Test Lab"
     ]
 )
+st.sidebar.markdown("---")
+
+developer_mode = st.sidebar.toggle(
+    "🛠️ Developer Mode",
+    value=False,
+    help="Show internal testing and debugging tools."
+)
 
 st.sidebar.markdown("---")
 st.sidebar.caption("Student-built educational prototype")
