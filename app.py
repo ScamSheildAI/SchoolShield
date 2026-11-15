@@ -186,28 +186,178 @@ PRIVACY_TESTS = [
 
 # ---------------- FRESH TEST GENERATOR ----------------
 
+# ---------------- INDEPENDENT CHALLENGE TEST GENERATOR ----------------
+
 def make_cases(positive_templates, negative_templates, count=100):
     """
-    Creates a balanced, reproducible set of unique synthetic examples.
-    These are challenge cases, not real-world validation data.
+    Creates a balanced, diverse synthetic challenge set.
+    Templates are cycled so the dataset does not repeat just one phrase.
     """
-    positives = []
-    negatives = []
-
-    for template, variation in product(
-        positive_templates,
-        range(1, 101)
-    ):
-        positives.append((template.format(n=variation), True))
-
-    for template, variation in product(
-        negative_templates,
-        range(1, 101)
-    ):
-        negatives.append((template.format(n=variation), False))
-
     half = count // 2
-    return positives[:half] + negatives[:count - half]
+
+    positives = [
+        (positive_templates[i % len(positive_templates)] + f" [Case {i+1}]", True)
+        for i in range(half)
+    ]
+
+    negatives = [
+        (negative_templates[i % len(negative_templates)] + f" [Case {i+1}]", False)
+        for i in range(count - half)
+    ]
+
+    return positives + negatives
+
+
+# ---------------- 100 PHISHING CHALLENGE TESTS ----------------
+
+FRESH_PHISHING = make_cases(
+    [
+        "A delivery company says my parcel is waiting until I pay a release charge",
+        "Someone says I must provide the six digits sent to my phone to finish setup",
+        "A caller claims to be from my bank and asks me to confirm my login details",
+        "The message says my account access will disappear unless I act immediately",
+        "A stranger promises a scholarship after I pay a small registration fee",
+        "I received an unexpected prize notice asking me to pay a processing fee",
+        "A message asks me to move money to a different account to protect my savings",
+        "The sender says my account has been suspended and asks me to verify it",
+        "A person I do not know asks me to send my password to fix a login problem",
+        "An unknown sender says I must open a link to receive a reward",
+        "A message says my parcel cannot be delivered until I share a verification code",
+        "Someone promises a cash reward if I provide my banking information",
+        "A stranger says I have won a lottery I never entered and must pay first",
+        "The sender creates a deadline and says my account will be closed",
+        "An unexpected message asks me to confirm private details before receiving a gift",
+        "A caller pressures me to transfer money before explaining the reason",
+        "A message claims my school account needs an immediate password confirmation",
+        "A stranger asks me to share a code that arrived on my phone",
+        "A reward message says I must pay first to unlock the benefit",
+        "An unknown person asks me to use a web address to restore my account"
+    ],
+    [
+        "Our computer lesson explains why OTPs should never be shared",
+        "The word urgent appears in today's English vocabulary exercise",
+        "We discussed how fake scholarship messages can mislead students",
+        "Our teacher explained how account suspension scams work",
+        "The science worksheet asks us to identify different types of links",
+        "I am writing a story about a fictional bank employee",
+        "The class presentation explains how to create a strong password",
+        "We learned that a real prize should not require suspicious payments",
+        "My notebook contains a chapter about online safety",
+        "The school timetable was updated this morning",
+        "I am researching how people recognise suspicious messages",
+        "The word password appears in our computer textbook",
+        "Our teacher asked us to define verification for homework",
+        "The library sent a reminder about returning books",
+        "The football practice has moved to the afternoon",
+        "I received the normal class notes from my teacher",
+        "Our group is preparing a presentation about online fraud",
+        "The school exhibition will display our computer project",
+        "We are discussing why unknown senders should be checked",
+        "The word reward appears in the reading passage"
+    ]
+)
+
+
+# ---------------- 100 CYBERBULLYING CHALLENGE TESTS ----------------
+
+FRESH_BULLYING = make_cases(
+    [
+        "They keep leaving me out of every group activity on purpose",
+        "The group chat becomes silent whenever I try to join",
+        "They made a separate group just to talk about me",
+        "Someone keeps sharing embarrassing stories about me",
+        "They tell everyone not to sit or work with me",
+        "A classmate keeps mocking my answers in front of others",
+        "They keep making jokes about me after I asked them to stop",
+        "Someone is deliberately encouraging others to ignore me",
+        "They keep posting unkind comments about my work",
+        "A person repeatedly tells others that I should not be included",
+        "They threaten to make trouble for me after school",
+        "Someone keeps sending unwanted insulting messages",
+        "They are deliberately spreading false stories about me",
+        "My classmates repeatedly imitate me to embarrass me",
+        "They keep telling me that nobody wants me in the team",
+        "Someone is encouraging others to laugh whenever I speak",
+        "They keep targeting me with hurtful comments online",
+        "A person repeatedly tells me that I do not belong in class",
+        "They keep making a joke out of my mistakes",
+        "Someone is trying to turn my friends against me"
+    ],
+    [
+        "Our lesson explains why calling someone an idiot is hurtful",
+        "The teacher asked us to discuss the word loser in a story",
+        "I am writing an essay about how bullying affects students",
+        "The school assembly discussed why nobody should be excluded",
+        "We are learning how to respond calmly when we disagree",
+        "The character in the novel says shut up during an argument",
+        "I reported an insulting comment because it was inappropriate",
+        "Our class poster says everyone deserves respect",
+        "The teacher explained why threats should be taken seriously",
+        "I am studying examples of rumours for a media literacy lesson",
+        "My friend and I disagreed about the correct answer",
+        "We invited everyone to join our study group",
+        "I appreciated my teammate's helpful feedback",
+        "The class discussed how to apologise after an argument",
+        "Our group agreed to give everyone a chance to speak",
+        "I asked my classmate to explain the homework",
+        "The story includes a character who behaves unkindly",
+        "We discussed how to support someone who feels excluded",
+        "The teacher asked us to identify respectful language",
+        "I enjoyed working with my classmates today"
+    ]
+)
+
+
+# ---------------- 100 PRIVACY CHALLENGE TESTS ----------------
+
+FRESH_PRIVACY = make_cases(
+    [
+        "My password is DemoPassword123",
+        "My OTP is 000000",
+        "My verification code is 000000",
+        "My phone number is 0000000000",
+        "My email is learner@example.org",
+        "My address is 12 Example Street",
+        "My school is Sunrise Public School",
+        "My date of birth is 12 March 2012",
+        "My bank account number is 000000000000",
+        "My passcode is DemoCode123",
+        "My card number and CVV are confidential",
+        "Please save my phone number 0000000000",
+        "The password for my account is SamplePass123",
+        "My verification code is 123456",
+        "My contact email is student@example.org",
+        "My home address is 45 Sample Road",
+        "I attend Sunrise Public School",
+        "My birthday is 15 August 2012",
+        "My account number is 111111111111",
+        "The passcode for this sample account is Demo123"
+    ],
+    [
+        "Our lesson explains what an OTP means without showing a real code",
+        "I am learning how to create a secure password",
+        "The computer textbook explains why email addresses are personal",
+        "We discussed why people should protect their phone numbers",
+        "The teacher explained what a home address means",
+        "Our class is studying digital privacy",
+        "The worksheet asks us to define personal information",
+        "I am writing about safe ways to use the internet",
+        "The lesson explains why students should protect their accounts",
+        "We are learning about data protection",
+        "My favourite subject is geography",
+        "I enjoy playing football after school",
+        "The science exhibition begins next week",
+        "I am preparing for my mathematics test",
+        "Our class is reading an adventure story",
+        "The school library has new books",
+        "I enjoy learning computer programming",
+        "We are preparing a history presentation",
+        "My favourite sport is badminton",
+        "I watched an educational documentary today"
+    ]
+)
+
+
 
 
 # ---------------- 100 PHISHING TESTS ----------------
