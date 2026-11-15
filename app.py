@@ -85,7 +85,7 @@ def detect_bullying(message):
         (r"\b(go away|nobody wants you|you don't belong here)\b", "Contains exclusionary language"),
         (r"\b(kill yourself|you should disappear)\b", "Contains seriously harmful language"),
         (r"\b(keep bullying|make fun of|humiliate you)\b", "Suggests targeted harassment"),
-        (r"\b(spreading rumors|spread rumours|fake stories about you)\b", "Mentions spreading rumours"),
+        (r"\b(?:spreading|srpreading|spread)\s+(?:rumou?rs|roumers)(?:\s+about\s+(?:you|u))?\b", "Mentions spreading rumours"),
         (r"\b(shut up|hate you|pathetic)\b", "Contains hostile language")
     ]
 
