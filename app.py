@@ -51,6 +51,7 @@ def matches(pattern, text):
     return re.search(pattern, text, re.IGNORECASE) is not None
 
 
+
 # ============================================================
 # PHISHING GUARDIAN
 # ============================================================
@@ -61,16 +62,16 @@ def detect_phishing(message):
 
     rules = [
         (
-            r"\b(share|send|tell|reveal|provide|confirm|give)\b.{0,45}\b(otp|verification code|password|passcode|login details)\b",
-            "Requests a sensitive verification or login detail"
+            r"\b(share|send|tell|reveal|provide|confirm|give)\b.{0,60}\b(otp|verification code|password|passcode|login details)\b",
+            "Requests sensitive verification or login information"
         ),
         (
-            r"\b(otp|verification code|password|passcode|login details)\b.{0,45}\b(share|send|tell|reveal|provide|confirm|give)\b",
-            "Connects sensitive information with a request to share it"
+            r"\b(otp|verification code|password|passcode|login details)\b.{0,60}\b(share|send|tell|reveal|provide|confirm|give)\b",
+            "Connects sensitive information with a sharing request"
         ),
         (
             r"\b(pay|payment|fee|charge|transfer|send)\b.{0,55}\b(release|unlock|claim|restore|receive|avoid|prize|parcel|reward|account)\b",
-            "Links a payment with a promised benefit or threat"
+            "Links payment with a promised benefit or threat"
         ),
         (
             r"\b(prize|reward|gift|scholarship|refund|lottery)\b.{0,55}\b(fee|payment|charge|transfer|bank details|account details)\b",
@@ -78,18 +79,18 @@ def detect_phishing(message):
         ),
         (
             r"\b(account|profile|access)\b.{0,45}\b(blocked|suspended|closed|locked|disabled)\b",
-            "Mentions an account restriction"
+            "Mentions a possible account restriction"
         ),
         (
             r"\b(blocked|suspended|closed|locked|disabled)\b.{0,45}\b(account|profile|access)\b",
-            "Threatens account access"
+            "Mentions a possible threat to account access"
         ),
         (
-            r"\b(unknown sender|stranger|unfamiliar caller|unexpected message)\b",
-            "Involves an unfamiliar sender or caller"
+            r"\b(unknown sender|stranger|unfamiliar caller|unexpected message|unfamiliar link|unknown link)\b",
+            "Mentions an unfamiliar sender or link"
         ),
         (
-            r"\b(click|tap|open|visit)\b.{0,35}\b(link|website|page)\b",
+            r"\b(click|tap|open|visit)\b.{0,50}\b(link|website|page)\b",
             "Encourages opening a link"
         ),
         (
@@ -97,12 +98,28 @@ def detect_phishing(message):
             "Contains a web link"
         ),
         (
-            r"\b(urgent|immediately|act now|before tonight|within 24 hours|right away)\b",
+            r"\b(urgent|immediately|act now|before tonight|within 24 hours|right away|today only)\b",
             "Uses urgency or pressure"
         ),
         (
-            r"\b(bank|delivery|parcel|school account|support team|security team)\b.{0,50}\b(confirm|verify|provide|send|reveal|pay)\b",
-            "A claimed organisation is connected to a request for action"
+            r"\b(bank|delivery|parcel|school account|support team|security team)\b.{0,60}\b(confirm|verify|provide|send|reveal|pay)\b",
+            "Connects a claimed organisation with a request for action"
+        ),
+        (
+            r"\b(account|school account|profile|login)\b.{0,60}\b(verify|verification|confirm|validate|restore|reactivate|recover)\b",
+            "Requests account verification or restoration"
+        ),
+        (
+            r"\b(verify|verification|confirm|validate|restore|reactivate|recover)\b.{0,60}\b(account|school account|profile|login|access)\b",
+            "Connects verification with account access"
+        ),
+        (
+            r"\b(restore|recover|unlock|reactivate)\b.{0,50}\b(account|access|profile|login)\b",
+            "Promises to restore or unlock account access"
+        ),
+        (
+            r"\b(open|click|tap|visit)\b.{0,70}\b(verify|verification|restore|unlock|recover|confirm)\b",
+            "Directs the recipient to a verification or recovery action"
         )
     ]
 
@@ -129,14 +146,29 @@ def detect_phishing(message):
         )
     )
 
+    verification_link = (
+        matches(
+            r"\b(account|school account|profile|access|login)\b",
+            text
+        )
+        and matches(
+            r"\b(verify|verification|confirm|restore|recover|unlock|reactivate)\b",
+            text
+        )
+        and matches(
+            r"\b(link|website|page|https?://|www\.)\b|https?://|www\.",
+            text
+        )
+    )
+
     suspicious = (
         sensitive_request
         or payment_pressure
+        or verification_link
         or len(reasons) >= 2
     )
 
     return suspicious, reasons
-
 
 # ============================================================
 # CYBERBULLYING GUARDIAN
