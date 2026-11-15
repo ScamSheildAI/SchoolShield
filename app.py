@@ -160,12 +160,31 @@ def detect_phishing(message):
             text
         )
     )
-
-    suspicious = (
-        sensitive_request
-        or payment_pressure
-        or verification_link
-        or len(reasons) >= 2
+suspicious = (
+    sensitive_request
+    or payment_pressure
+    or verification_link
+    or len(reasons) >= 2
+    or matches(
+        r"\b(restore|restored|recover|unlock|reactivate)\b.{0,80}\b(account|profile|access|login)\b",
+        text
+    ) and matches(
+        r"\b(verify|verification|confirm)\b.{0,80}\b(details|information|identity)\b",
+        text
+    )
+)
+        (
+    r"\b(account|profile|access|login)\b.{0,80}\b(restore|restored|verify|verification|confirm|details)\b",
+    "Connects account restoration with verification of details"
+),
+(
+    r"\b(restore|restored|recover|unlock|reactivate)\b.{0,80}\b(account|profile|access|login)\b",
+    "Mentions restoring or recovering account access"
+),
+(
+    r"\b(verify|verification|confirm)\b.{0,60}\b(your|personal|account|login)?\s*(details|information|identity)\b",
+    "Requests verification of personal or account details"
+),
     )
 
     return suspicious, reasons
