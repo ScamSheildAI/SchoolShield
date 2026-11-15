@@ -689,6 +689,7 @@ elif page == "Performance Lab":
     st.dataframe(shown, use_container_width=True, hide_index=True)
 
 
+
 # ---------------- INDEPENDENT TEST LAB ----------------
 
 elif page == "Independent Test Lab":
@@ -696,13 +697,12 @@ elif page == "Independent Test Lab":
 
     st.write(
         "A set of 300 synthetic challenge examples designed "
-        "to test detection and false alarms."
+        "to test detection, missed warnings and false alarms."
     )
 
     st.warning(
-        "These are curated synthetic examples. Some templates are repeated "
-        "to create a 100-test set for each Guardian. Scores apply only "
-        "to these examples, not to real-world performance."
+        "These are curated synthetic examples. Some templates are repeated. "
+        "Scores apply only to this dataset, not to real-world performance."
     )
 
     fresh_tests = {
@@ -710,15 +710,6 @@ elif page == "Independent Test Lab":
         "Cyberbullying Guardian": (FRESH_BULLYING, detect_bullying),
         "Privacy Guardian": (FRESH_PRIVACY, detect_privacy)
     }
-
-    st.markdown("---")
-    st.subheader("Hard Challenge Dataset")
-
-    a, b, c, d = st.columns(4)
-    a.metric("Total Challenge Tests", 300)
-    b.metric("Phishing", len(FRESH_PHISHING))
-    c.metric("Cyberbullying", len(FRESH_BULLYING))
-    d.metric("Privacy", len(FRESH_PRIVACY))
 
     rows = []
     detailed = []
@@ -745,6 +736,110 @@ elif page == "Independent Test Lab":
 
     st.dataframe(shown, use_container_width=True, hide_index=True)
 
+    # ---------------- AUTOMATIC MISSED WARNING ANALYZER ----------------
+
+    st.markdown("---")
+    st.title("🔍 Automatic Mistake Analyzer")
+
+    st.write(
+        "This section automatically finds messages that the Guardians "
+        "failed to detect or incorrectly flagged."
+    )
+
+    all_results = pd.concat(
+        [item[2] for item in detailed],
+        ignore_index=True
+    )
+
+    guardian_choice = st.selectbox(
+        "Choose a Guardian to analyse",
+        [
+            "All Guardians",
+            "Phishing Guardian",
+            "Cyberbullying Guardian",
+            "Privacy Guardian"
+        ],
+        key="analyzer_guardian"
+    )
+
+    outcome_choice = st.selectbox(
+        "Choose which mistakes to view",
+        [
+            "Missed Warnings",
+            "False Alarms",
+            "All Mistakes"
+        ],
+        key="analyzer_outcome"
+    )
+
+    filtered = all_results.copy()
+
+    if guardian_choice != "All Guardians":
+        filtered = filtered[
+            filtered["Guardian"] == guardian_choice
+        ]
+
+    if outcome_choice == "Missed Warnings":
+        filtered = filtered[
+            filtered["Outcome"] == "Missed Warning"
+        ]
+
+    elif outcome_choice == "False Alarms":
+        filtered = filtered[
+            filtered["Outcome"] == "False Alarm"
+        ]
+
+    else:
+        filtered = filtered[
+            filtered["Outcome"].isin(
+                ["Missed Warning", "False Alarm"]
+            )
+        ]
+
+    missed_count = len(
+        filtered[filtered["Outcome"] == "Missed Warning"]
+    )
+
+    false_count = len(
+        filtered[filtered["Outcome"] == "False Alarm"]
+    )
+
+    a, b, c = st.columns(3)
+
+    a.metric("Mistakes Found", len(filtered))
+    b.metric("Missed Warnings", missed_count)
+    c.metric("False Alarms", false_count)
+
+    st.markdown("---")
+
+    if filtered.empty:
+        st.success("No mistakes found for this selection!")
+    else:
+        st.subheader("Messages Requiring Improvement")
+
+        st.dataframe(
+            filtered[
+                [
+                    "Guardian",
+                    "Message",
+                    "Actual",
+                    "Prediction",
+                    "Outcome",
+                    "Warning Signs"
+                ]
+            ],
+            use_container_width=True,
+            hide_index=True
+        )
+
+        st.download_button(
+            "⬇️ Download These Mistakes",
+            data=filtered.to_csv(index=False).encode("utf-8"),
+            file_name="schoolshield_mistake_analysis.csv",
+            mime="text/csv",
+            key="download_mistakes"
+        )
+
     st.markdown("---")
     st.subheader("Detailed Challenge Results")
 
@@ -762,7 +857,11 @@ elif page == "Independent Test Lab":
             f.metric("Missed Warnings", metrics["Missed Warnings"])
             g.metric("Total Tests", metrics["Total Tests"])
 
-            st.dataframe(df, use_container_width=True, hide_index=True)
+            st.dataframe(
+                df,
+                use_container_width=True,
+                hide_index=True
+            )
 
             st.download_button(
                 "⬇️ Download CSV Results",
@@ -775,14 +874,9 @@ elif page == "Independent Test Lab":
     st.markdown("---")
     st.subheader("Download All 300 Challenge Tests")
 
-    combined = pd.concat(
-        [item[2] for item in detailed],
-        ignore_index=True
-    )
-
     st.download_button(
         "⬇️ Download Complete Challenge Dataset",
-        data=combined.to_csv(index=False).encode("utf-8"),
+        data=all_results.to_csv(index=False).encode("utf-8"),
         file_name="schoolshield_300_hard_challenge_tests.csv",
         mime="text/csv"
     )
@@ -793,6 +887,7 @@ elif page == "Independent Test Lab":
         "False Alarm: a safe message flagged. "
         "Missed Warning: a threat not detected."
     )
+
 
 
 # ---------------- FOOTER ----------------
