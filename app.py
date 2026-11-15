@@ -52,6 +52,7 @@ def matches(pattern, text):
 
 
 
+
 # ============================================================
 # PHISHING GUARDIAN
 # ============================================================
@@ -114,14 +115,18 @@ def detect_phishing(message):
             "Connects verification with account access"
         ),
         (
-            r"\b(restore|recover|unlock|reactivate)\b.{0,50}\b(account|access|profile|login)\b",
-            "Promises to restore or unlock account access"
+            r"\b(restore|restored|recover|unlock|reactivate)\b.{0,50}\b(account|access|profile|login)\b",
+            "Mentions restoring or unlocking account access"
         ),
         (
             r"\b(open|click|tap|visit)\b.{0,70}\b(verify|verification|restore|unlock|recover|confirm)\b",
             "Directs the recipient to a verification or recovery action"
+        ),
+        (
+            r"\b(verify|verification|confirm)\b.{0,60}\b(your|personal|account|login)?\s*(details|information|identity)\b",
+            "Requests verification of personal or account details"
         )
-    
+    ]
 
     for pattern, reason in rules:
         if matches(pattern, text) and reason not in reasons:
@@ -156,37 +161,43 @@ def detect_phishing(message):
             text
         )
         and matches(
-            r"\b(link|website|page|https?://|www\.)\b|https?://|www\.",
+            r"\b(link|website|page)\b|https?://|www\.",
             text
         )
     )
-suspicious = (
-    sensitive_request
-    or payment_pressure
-    or verification_link
-    or len(reasons) >= 2
-    or matches(
-        r"\b(restore|restored|recover|unlock|reactivate)\b.{0,80}\b(account|profile|access|login)\b",
-        text
-    ) and matches(
-        r"\b(verify|verification|confirm)\b.{0,80}\b(details|information|identity)\b",
-        text
+
+    account_verification_pressure = (
+        matches(
+            r"\b(account|profile|access|login)\b",
+            text
+        )
+        and matches(
+            r"\b(restore|restored|recover|unlock|reactivate)\b",
+            text
+        )
+        and matches(
+            r"\b(verify|verification|confirm)\b",
+            text
+        )
+        and matches(
+            r"\b(details|information|identity)\b",
+            text
+        )
     )
-)
-        (
-    r"\b(account|profile|access|login)\b.{0,80}\b(restore|restored|verify|verification|confirm|details)\b",
-    "Connects account restoration with verification of details"
-),
-(
-    r"\b(restore|restored|recover|unlock|reactivate)\b.{0,80}\b(account|profile|access|login)\b",
-    "Mentions restoring or recovering account access"
-),
-(
-    r"\b(verify|verification|confirm)\b.{0,60}\b(your|personal|account|login)?\s*(details|information|identity)\b",
-    "Requests verification of personal or account details"
-),
+
+    if account_verification_pressure:
+        reason = "Connects account restoration with verification of personal details"
+        if reason not in reasons:
+            reasons.append(reason)
+
+    suspicious = (
+        sensitive_request
+        or payment_pressure
+        or verification_link
+        or account_verification_pressure
+        or len(reasons) >= 2
     )
-]
+
     return suspicious, reasons
 
 # ============================================================
