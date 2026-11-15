@@ -9,93 +9,124 @@ st.set_page_config(
     layout="wide"
 )
 
-# ---------------- DESIGN ----------------
+# ============================================================
+# DESIGN
+# ============================================================
 
 st.markdown("""
 <style>
-.stApp {background:#081426;color:#F1F5F9;}
-[data-testid="stSidebar"] {background:#101F35;}
-h1,h2,h3 {color:#E2E8F0;}
-p,label,li {color:#CBD5E1;}
+.stApp {
+    background: #081426;
+    color: #F1F5F9;
+}
+[data-testid="stSidebar"] {
+    background: #101F35;
+}
+h1, h2, h3 {
+    color: #E2E8F0;
+}
+p, label, li {
+    color: #CBD5E1;
+}
 div[data-testid="stMetric"] {
-    background:#14243B;
-    border:1px solid #263B58;
-    padding:15px;
-    border-radius:12px;
+    background: #14243B;
+    border: 1px solid #263B58;
+    padding: 15px;
+    border-radius: 12px;
 }
 .stButton button {
-    background:#2563EB;
-    color:white;
-    border-radius:8px;
+    background: #2563EB;
+    color: white;
+    border-radius: 8px;
 }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ---------------- HELPER ----------------
+# ============================================================
+# HELPER
+# ============================================================
 
 def matches(pattern, text):
     return re.search(pattern, text, re.IGNORECASE) is not None
 
 
-# ---------------- PHISHING GUARDIAN ----------------
+# ============================================================
+# PHISHING GUARDIAN
+# ============================================================
 
 def detect_phishing(message):
     text = message.lower()
     reasons = []
 
     rules = [
-        (r"\b(share|send|tell|reveal|provide|confirm)\b.{0,45}\b(otp|verification code|password|passcode|login details)\b",
-         "Requests a sensitive verification or login detail"),
-
-        (r"\b(otp|verification code|password|passcode|login details)\b.{0,45}\b(share|send|tell|reveal|provide|confirm)\b",
-         "Connects sensitive information with a request to share it"),
-
-        (r"\b(pay|payment|fee|charge|transfer|send)\b.{0,55}\b(release|unlock|claim|restore|receive|avoid|prize|parcel|reward|account)\b",
-         "Links a payment with a promised benefit or threat"),
-
-        (r"\b(prize|reward|gift|scholarship|refund|lottery)\b.{0,55}\b(fee|payment|charge|transfer|bank details|account details)\b",
-         "Requests payment or details for an unexpected offer"),
-
-        (r"\b(account|profile|access)\b.{0,45}\b(blocked|suspended|closed|locked|disabled)\b",
-         "Mentions an account restriction"),
-
-        (r"\b(blocked|suspended|closed|locked|disabled)\b.{0,45}\b(account|profile|access)\b",
-         "Threatens account access"),
-
-        (r"\b(unknown sender|stranger|unfamiliar caller|unexpected message)\b",
-         "Involves an unfamiliar sender or caller"),
-
-        (r"\b(click|tap|open|visit)\b.{0,35}\b(link|website|page)\b",
-         "Encourages opening a link"),
-
-        (r"https?://|www\.", "Contains a web link"),
-
-        (r"\b(urgent|immediately|act now|before tonight|within 24 hours|right away)\b",
-         "Uses urgency or pressure"),
-
-        (r"\b(bank|delivery|parcel|school account|support team|security team)\b.{0,50}\b(confirm|verify|provide|send|reveal|pay)\b",
-         "A claimed organisation is connected to a request for action")
+        (
+            r"\b(share|send|tell|reveal|provide|confirm|give)\b.{0,45}\b(otp|verification code|password|passcode|login details)\b",
+            "Requests a sensitive verification or login detail"
+        ),
+        (
+            r"\b(otp|verification code|password|passcode|login details)\b.{0,45}\b(share|send|tell|reveal|provide|confirm|give)\b",
+            "Connects sensitive information with a request to share it"
+        ),
+        (
+            r"\b(pay|payment|fee|charge|transfer|send)\b.{0,55}\b(release|unlock|claim|restore|receive|avoid|prize|parcel|reward|account)\b",
+            "Links a payment with a promised benefit or threat"
+        ),
+        (
+            r"\b(prize|reward|gift|scholarship|refund|lottery)\b.{0,55}\b(fee|payment|charge|transfer|bank details|account details)\b",
+            "Requests payment or details for an unexpected offer"
+        ),
+        (
+            r"\b(account|profile|access)\b.{0,45}\b(blocked|suspended|closed|locked|disabled)\b",
+            "Mentions an account restriction"
+        ),
+        (
+            r"\b(blocked|suspended|closed|locked|disabled)\b.{0,45}\b(account|profile|access)\b",
+            "Threatens account access"
+        ),
+        (
+            r"\b(unknown sender|stranger|unfamiliar caller|unexpected message)\b",
+            "Involves an unfamiliar sender or caller"
+        ),
+        (
+            r"\b(click|tap|open|visit)\b.{0,35}\b(link|website|page)\b",
+            "Encourages opening a link"
+        ),
+        (
+            r"https?://|www\.",
+            "Contains a web link"
+        ),
+        (
+            r"\b(urgent|immediately|act now|before tonight|within 24 hours|right away)\b",
+            "Uses urgency or pressure"
+        ),
+        (
+            r"\b(bank|delivery|parcel|school account|support team|security team)\b.{0,50}\b(confirm|verify|provide|send|reveal|pay)\b",
+            "A claimed organisation is connected to a request for action"
+        )
     ]
 
     for pattern, reason in rules:
         if matches(pattern, text) and reason not in reasons:
             reasons.append(reason)
 
-    # Strong combinations
-    sensitive_request = matches(
-        r"\b(otp|verification code|password|passcode|bank details|login details)\b",
-        text
-    ) and matches(
-        r"\b(share|send|tell|reveal|provide|confirm|give)\b",
-        text
+    sensitive_request = (
+        matches(
+            r"\b(otp|verification code|password|passcode|bank details|login details)\b",
+            text
+        )
+        and matches(
+            r"\b(share|send|tell|reveal|provide|confirm|give)\b",
+            text
+        )
     )
 
-    payment_pressure = matches(
-        r"\b(pay|payment|fee|charge|transfer)\b", text
-    ) and matches(
-        r"\b(prize|reward|parcel|account|scholarship|refund|unlock|release)\b",
-        text
+    payment_pressure = (
+        matches(r"\b(pay|payment|fee|charge|transfer)\b", text)
+        and matches(
+            r"\b(prize|reward|parcel|account|scholarship|refund|unlock|release)\b",
+            text
+        )
     )
 
     suspicious = (
@@ -107,14 +138,14 @@ def detect_phishing(message):
     return suspicious, reasons
 
 
-# ---------------- CYBERBULLYING GUARDIAN ----------------
+# ============================================================
+# CYBERBULLYING GUARDIAN
+# ============================================================
 
 def detect_bullying(message):
     text = message.lower()
     reasons = []
 
-    # Educational or reporting context should not automatically
-    # be treated as an attack on the reader.
     educational_context = matches(
         r"\b(lesson explains|teacher asked us|essay about|poster says|"
         r"worksheet asks|we are learning|we discussed|studying examples|"
@@ -124,71 +155,75 @@ def detect_bullying(message):
     )
 
     patterns = [
-        (r"\b(stupid|idiot|loser|worthless|ugly|dumb|pathetic)\b",
-         "Contains insulting language"),
-
-        (r"\b(nobody likes you|everyone hates you|you have no friends|"
-         r"nobody wants you)\b",
-         "Contains hurtful personal remarks"),
-
-        (r"\b(i will hurt you|i will beat you|you will regret this)\b",
-         "Contains threatening language"),
-
-        (r"\b(go away|you don't belong here|you should not be here)\b",
-         "Contains exclusionary language"),
-
-        (r"\b(shut up|hate you)\b",
-         "Contains hostile language"),
-
-        (r"\b(spreading|spread|sharing)\s+(rumours|rumors|false stories)\b",
-         "Mentions spreading rumours"),
-
-        (r"\b(make fun of|mock|humiliate|embarrass)\b",
-         "Mentions mocking or humiliating someone"),
-
-        (r"\b(leave me out|exclude me|excluding me|"
-         r"leave me behind|not include me)\b",
-         "Describes deliberate exclusion"),
-
-        (r"\b(deliberately|repeatedly|keeps|keep|constantly)\b.{0,65}"
-         r"\b(ignore|mock|exclude|insult|target|embarrass|humiliate)\b",
-         "Describes repeated targeted behaviour"),
-
-        (r"\b(tell|telling|tells|pressure|pressuring)\b.{0,50}"
-         r"\b(others|everyone|friends)\b.{0,40}"
-         r"\b(ignore|avoid|exclude|not talk|not sit)\b",
-         "Describes encouraging others to exclude someone"),
-
-        (r"\b(separate group|group chat)\b.{0,60}"
-         r"\b(mock|make fun|target|embarrass|insult)\b",
-         "Describes group-based targeting"),
-
-        (r"\b(share|post|send)\b.{0,50}"
-         r"\b(embarrassing|private|unwanted)\b.{0,40}"
-         r"\b(picture|photo|story|message|comment)\b",
-         "May involve sharing embarrassing content"),
-
-        (r"\b(after i asked them to stop|asked them to stop|"
-         r"told them to stop)\b",
-         "Indicates unwanted behaviour continued after being asked to stop"),
-
-        (r"\b(turn my friends against me|stop being friends with me)\b",
-         "Describes attempts to damage friendships"),
-
-        (r"\b(laugh whenever i speak|laugh at my mistakes|"
-         r"laugh at me)\b",
-         "Describes repeated humiliation")
+        (
+            r"\b(stupid|idiot|loser|worthless|ugly|dumb|pathetic)\b",
+            "Contains insulting language"
+        ),
+        (
+            r"\b(nobody likes you|everyone hates you|you have no friends|nobody wants you)\b",
+            "Contains hurtful personal remarks"
+        ),
+        (
+            r"\b(i will hurt you|i will beat you|you will regret this)\b",
+            "Contains threatening language"
+        ),
+        (
+            r"\b(go away|you don't belong here|you should not be here)\b",
+            "Contains exclusionary language"
+        ),
+        (
+            r"\b(shut up|hate you)\b",
+            "Contains hostile language"
+        ),
+        (
+            r"\b(spreading|spread|sharing)\s+(rumours|rumors|false stories)\b",
+            "Mentions spreading rumours"
+        ),
+        (
+            r"\b(make fun of|mock|humiliate|embarrass)\b",
+            "Mentions mocking or humiliating someone"
+        ),
+        (
+            r"\b(leave me out|exclude me|excluding me|leave me behind|not include me)\b",
+            "Describes deliberate exclusion"
+        ),
+        (
+            r"\b(deliberately|repeatedly|keeps|keep|constantly)\b.{0,65}\b(ignore|mock|exclude|insult|target|embarrass|humiliate)\b",
+            "Describes repeated targeted behaviour"
+        ),
+        (
+            r"\b(tell|telling|tells|pressure|pressuring)\b.{0,50}\b(others|everyone|friends)\b.{0,40}\b(ignore|avoid|exclude|not talk|not sit)\b",
+            "Describes encouraging others to exclude someone"
+        ),
+        (
+            r"\b(separate group|group chat)\b.{0,60}\b(mock|make fun|target|embarrass|insult)\b",
+            "Describes group-based targeting"
+        ),
+        (
+            r"\b(share|post|send)\b.{0,50}\b(embarrassing|private|unwanted)\b.{0,40}\b(picture|photo|story|message|comment)\b",
+            "May involve sharing embarrassing content"
+        ),
+        (
+            r"\b(after i asked them to stop|asked them to stop|told them to stop)\b",
+            "Indicates unwanted behaviour continued after being asked to stop"
+        ),
+        (
+            r"\b(turn my friends against me|stop being friends with me)\b",
+            "Describes attempts to damage friendships"
+        ),
+        (
+            r"\b(laugh whenever i speak|laugh at my mistakes|laugh at me)\b",
+            "Describes repeated humiliation"
+        )
     ]
 
     for pattern, reason in patterns:
         if matches(pattern, text) and reason not in reasons:
             reasons.append(reason)
 
-    # Educational discussion alone is not a bullying incident.
     if educational_context:
         return False, []
 
-    # A single direct insult or threat can be a warning.
     direct_attack = matches(
         r"\b(stupid|idiot|loser|worthless|ugly|dumb|pathetic|"
         r"nobody likes you|everyone hates you|i will hurt you|"
@@ -196,57 +231,66 @@ def detect_bullying(message):
         text
     )
 
-    targeted_behaviour = len(reasons) > 0
-
-    return direct_attack or targeted_behaviour, reasons
+    return direct_attack or len(reasons) > 0, reasons
 
 
-# ---------------- PRIVACY GUARDIAN ----------------
+# ============================================================
+# PRIVACY GUARDIAN
+# ============================================================
 
 def detect_privacy(message):
     text = message.lower()
     reasons = []
 
     patterns = [
-        (r"\b(password|passcode)\s*(is|[:=])\s*\S+",
-         "May contain a password or passcode"),
-
-        (r"\b(my password is|my passcode is)\s+\S+",
-         "May contain a password or passcode"),
-
-        (r"\b(otp|verification code)\s*(is|[:=])?\s*\d{4,8}\b",
-         "May contain an OTP or verification code"),
-
-        (r"\b\d{10}\b",
-         "May contain a 10-digit phone number"),
-
-        (r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b",
-         "Contains an email address"),
-
-        (r"\b\d{12}\b",
-         "May contain a 12-digit identification number"),
-
-        (r"\b(my address is|i live at|home address is|"
-         r"my home address is)\b",
-         "Mentions a home address"),
-
-        (r"\b(my school is|my school name is|i attend)\b",
-         "Mentions school identity"),
-
-        (r"\b(date of birth|my birthday is|born on)\b",
-         "Mentions date of birth"),
-
-        (r"\b(bank account number|account number is|"
-         r"card number|cvv)\b",
-         "Mentions banking or card information"),
-
-        (r"\b(my phone number is|my mobile number is|"
-         r"contact number is)\b",
-         "Mentions a phone number"),
-
-        (r"\b(my email is|my email address is|"
-         r"contact email is)\b",
-         "Mentions an email address")
+        (
+            r"\b(password|passcode)\s*(is|[:=])\s*\S+",
+            "May contain a password or passcode"
+        ),
+        (
+            r"\b(my password is|my passcode is)\s+\S+",
+            "May contain a password or passcode"
+        ),
+        (
+            r"\b(otp|verification code)\s*(is|[:=])?\s*\d{4,8}\b",
+            "May contain an OTP or verification code"
+        ),
+        (
+            r"\b\d{10}\b",
+            "May contain a 10-digit phone number"
+        ),
+        (
+            r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b",
+            "Contains an email address"
+        ),
+        (
+            r"\b\d{12}\b",
+            "May contain a 12-digit identification number"
+        ),
+        (
+            r"\b(my address is|i live at|home address is|my home address is)\b",
+            "Mentions a home address"
+        ),
+        (
+            r"\b(my school is|my school name is|i attend)\b",
+            "Mentions school identity"
+        ),
+        (
+            r"\b(date of birth|my birthday is|born on)\b",
+            "Mentions date of birth"
+        ),
+        (
+            r"\b(bank account number|account number is|card number|cvv)\b",
+            "Mentions banking or card information"
+        ),
+        (
+            r"\b(my phone number is|my mobile number is|contact number is)\b",
+            "Mentions a phone number"
+        ),
+        (
+            r"\b(my email is|my email address is|contact email is)\b",
+            "Mentions an email address"
+        )
     ]
 
     for pattern, reason in patterns:
@@ -256,7 +300,9 @@ def detect_privacy(message):
     return len(reasons) > 0, reasons
 
 
-# ---------------- TEST DATA ----------------
+# ============================================================
+# ORIGINAL TEST DATA
+# ============================================================
 
 PHISHING_TESTS = [
     ("Share your OTP to receive your cash reward.", True),
@@ -298,13 +344,13 @@ PRIVACY_TESTS = [
 ]
 
 
-# ---------------- CHALLENGE DATA ----------------
+# ============================================================
+# CHALLENGE DATA GENERATOR
+# ============================================================
 
 def build_challenge(positive, negative):
     cases = []
 
-    # 50 positive and 50 negative examples.
-    # Templates are cycled to create a repeatable challenge set.
     for i in range(50):
         cases.append((positive[i % len(positive)], True))
 
@@ -313,6 +359,10 @@ def build_challenge(positive, negative):
 
     return cases
 
+
+# ============================================================
+# PHISHING CHALLENGE EXAMPLES
+# ============================================================
 
 FRESH_PHISHING = build_challenge(
     [
@@ -361,6 +411,11 @@ FRESH_PHISHING = build_challenge(
     ]
 )
 
+
+# ============================================================
+# CYBERBULLYING CHALLENGE EXAMPLES
+# ============================================================
+
 FRESH_BULLYING = build_challenge(
     [
         "They deliberately leave me out of every group activity",
@@ -407,6 +462,11 @@ FRESH_BULLYING = build_challenge(
         "I enjoyed working with my classmates today"
     ]
 )
+
+
+# ============================================================
+# PRIVACY CHALLENGE EXAMPLES
+# ============================================================
 
 FRESH_PRIVACY = build_challenge(
     [
@@ -456,7 +516,9 @@ FRESH_PRIVACY = build_challenge(
 )
 
 
-# ---------------- METRICS ----------------
+# ============================================================
+# EVALUATION AND METRICS
+# ============================================================
 
 def evaluate_guardian(test_data, detector, guardian):
     results = []
@@ -490,9 +552,11 @@ def evaluate_guardian(test_data, detector, guardian):
     fn = sum(df["Outcome"] == "Missed Warning")
 
     total = len(df)
+
     accuracy = (tp + tn) / total if total else 0
     precision = tp / (tp + fp) if tp + fp else 0
     recall = tp / (tp + fn) if tp + fn else 0
+
     f1 = (
         2 * precision * recall / (precision + recall)
         if precision + recall else 0
@@ -513,7 +577,9 @@ def evaluate_guardian(test_data, detector, guardian):
     return metrics, df
 
 
-# ---------------- GUARDIAN PAGE ----------------
+# ============================================================
+# GUARDIAN PAGE
+# ============================================================
 
 def guardian_page(title, description, detector, samples, label):
     st.title(title)
@@ -521,7 +587,7 @@ def guardian_page(title, description, detector, samples, label):
     st.markdown("---")
 
     options = ["Choose an example"] + [
-        f"Example {i+1}" for i in range(len(samples))
+        f"Example {i + 1}" for i in range(len(samples))
     ]
 
     selected = st.selectbox("Try a sample message", options)
@@ -544,6 +610,7 @@ def guardian_page(title, description, detector, samples, label):
 
             if detected:
                 st.error(f"⚠️ {label} detected")
+
                 st.write("**Warning signs:**")
                 for reason in reasons:
                     st.write("- " + reason)
@@ -553,14 +620,47 @@ def guardian_page(title, description, detector, samples, label):
                     "Ask a trusted adult for help when needed."
                 )
             else:
-                st.success("No warning signs detected by the current rules.")
+                st.success(
+                    "No warning signs detected by the current rules."
+                )
+
                 st.info(
                     "This does not guarantee that a message is safe. "
                     "Check the sender and context."
                 )
 
 
-# ---------------- NAVIGATION ----------------
+# ============================================================
+# CHALLENGE EVALUATION HELPER
+# ============================================================
+
+def get_challenge_results():
+    fresh_tests = {
+        "Phishing Guardian": (FRESH_PHISHING, detect_phishing),
+        "Cyberbullying Guardian": (FRESH_BULLYING, detect_bullying),
+        "Privacy Guardian": (FRESH_PRIVACY, detect_privacy)
+    }
+
+    rows = []
+    detailed = []
+
+    for name, (tests, detector) in fresh_tests.items():
+        metrics, df = evaluate_guardian(tests, detector, name)
+        rows.append({"Guardian": name, **metrics})
+        detailed.append((name, metrics, df))
+
+    summary = pd.DataFrame(rows)
+    all_results = pd.concat(
+        [item[2] for item in detailed],
+        ignore_index=True
+    )
+
+    return summary, detailed, all_results
+
+
+# ============================================================
+# NAVIGATION
+# ============================================================
 
 st.sidebar.title("🛡️ SchoolShield")
 st.sidebar.caption("One Platform. Three Layers of Protection.")
@@ -593,11 +693,12 @@ st.sidebar.markdown("---")
 st.sidebar.caption("Student-built educational prototype")
 
 
-
-
-# ---------------- DASHBOARD ----------------
+# ============================================================
+# DASHBOARD
+# ============================================================
 
 if page == "Dashboard":
+
     st.title("🛡️ Welcome to SchoolShield")
     st.subheader("One Platform. Three Layers of Protection.")
 
@@ -613,31 +714,43 @@ if page == "Dashboard":
 
     with a:
         st.subheader("🎣 Phishing Guardian")
-        st.write("Checks for suspicious links, pressure and information requests.")
+        st.write(
+            "Checks for suspicious links, pressure and information requests."
+        )
 
     with b:
         st.subheader("💬 Cyberbullying Guardian")
-        st.write("Identifies potentially harmful or targeted language.")
+        st.write(
+            "Identifies potentially harmful or targeted language."
+        )
 
     with c:
         st.subheader("🔒 Privacy Guardian")
-        st.write("Looks for possible personal information.")
+        st.write(
+            "Looks for possible personal information."
+        )
 
     st.markdown("---")
     st.subheader("📊 SchoolShield Test Dataset")
 
     x, y, z, w = st.columns(4)
+
     x.metric("Guardians", "3")
     y.metric("Original Tests", "30")
     z.metric("Hard Challenge Tests", "300")
     w.metric("Total Tests", "330")
 
-    st.info("Use the sidebar to explore the Guardians and testing labs.")
+    st.info(
+        "Use the sidebar to explore the Guardians and testing labs."
+    )
 
 
-# ---------------- GUARDIAN PAGES ----------------
+# ============================================================
+# PHISHING GUARDIAN PAGE
+# ============================================================
 
 elif page == "Phishing Guardian":
+
     guardian_page(
         "🎣 Phishing Guardian",
         "Finds common warning signs in suspicious messages.",
@@ -646,7 +759,13 @@ elif page == "Phishing Guardian":
         "Possible phishing"
     )
 
+
+# ============================================================
+# CYBERBULLYING GUARDIAN PAGE
+# ============================================================
+
 elif page == "Cyberbullying Guardian":
+
     guardian_page(
         "💬 Cyberbullying Guardian",
         "Checks for potentially harmful or targeted language.",
@@ -655,7 +774,13 @@ elif page == "Cyberbullying Guardian":
         "Potentially harmful language"
     )
 
+
+# ============================================================
+# PRIVACY GUARDIAN PAGE
+# ============================================================
+
 elif page == "Privacy Guardian":
+
     guardian_page(
         "🔒 Privacy Guardian",
         "Checks for possible personal or sensitive information.",
@@ -665,16 +790,26 @@ elif page == "Privacy Guardian":
     )
 
 
-# ---------------- ORIGINAL PERFORMANCE LAB ----------------
+# ============================================================
+# PERFORMANCE LAB
+# ============================================================
 
 elif page == "Performance Lab":
-    st.title("📊 Original Performance Lab")
-    st.write("Results from the original demonstration examples.")
+
+    st.title("📊 SchoolShield Performance Lab")
+
+    st.write(
+        "Compare the Guardians using the original demonstration examples "
+        "and the 300-example challenge dataset."
+    )
 
     st.warning(
-        "These are small demonstration datasets, not an independent "
-        "real-world benchmark. SchoolShield currently uses rule-based detection."
+        "These are synthetic examples, not an independent real-world benchmark. "
+        "SchoolShield currently uses rule-based detection."
     )
+
+    st.markdown("---")
+    st.subheader("Original Demonstration Performance")
 
     original = [
         ("Phishing Guardian", PHISHING_TESTS, detect_phishing),
@@ -682,39 +817,78 @@ elif page == "Performance Lab":
         ("Privacy Guardian", PRIVACY_TESTS, detect_privacy)
     ]
 
-    rows = []
+    original_rows = []
 
     for name, tests, detector in original:
         metrics, df = evaluate_guardian(tests, detector, name)
-        rows.append({"Guardian": name, **metrics})
+        original_rows.append({"Guardian": name, **metrics})
 
-    result = pd.DataFrame(rows)
+    original_summary = pd.DataFrame(original_rows)
 
-    columns = [
-        "Guardian", "Accuracy", "Precision", "Recall",
-        "F1 Score", "False Alarms", "Missed Warnings"
+    original_columns = [
+        "Guardian",
+        "Accuracy",
+        "Precision",
+        "Recall",
+        "F1 Score",
+        "False Alarms",
+        "Missed Warnings"
     ]
 
-    shown = result[columns].copy()
+    original_shown = original_summary[original_columns].copy()
 
     for col in ["Accuracy", "Precision", "Recall", "F1 Score"]:
-        shown[col] = shown[col].map(lambda x: f"{x:.1f}%")
+        original_shown[col] = original_shown[col].map(
+            lambda x: f"{x:.1f}%"
+        )
 
-    st.dataframe(shown, use_container_width=True, hide_index=True)
+    st.dataframe(
+        original_shown,
+        use_container_width=True,
+        hide_index=True
+    )
 
-
-for name, tests, detector in guardians:
-    metrics, df = evaluate_guardian(tests, detector, name)
-    rows.append({"Guardian": name, **metrics})
-    detailed.append((name, metrics, df))
     st.markdown("---")
-    st.subheader("Challenge Performance Comparison")
+    st.subheader("300-Example Challenge Performance")
 
-    summary = pd.DataFrame(rows)
+    challenge_summary, detailed, all_results = get_challenge_results()
 
-    columns = [# ---------------- INDEPENDENT TEST LAB ----------------
+    challenge_columns = [
+        "Guardian",
+        "Total Tests",
+        "Accuracy",
+        "Precision",
+        "Recall",
+        "F1 Score",
+        "False Alarms",
+        "Missed Warnings"
+    ]
+
+    challenge_shown = challenge_summary[challenge_columns].copy()
+
+    for col in ["Accuracy", "Precision", "Recall", "F1 Score"]:
+        challenge_shown[col] = challenge_shown[col].map(
+            lambda x: f"{x:.1f}%"
+        )
+
+    st.dataframe(
+        challenge_shown,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    st.caption(
+        "The challenge examples include repeated templates. "
+        "Results describe performance on this specific test set only."
+    )
+
+
+# ============================================================
+# INDEPENDENT TEST LAB
+# ============================================================
 
 elif page == "Independent Test Lab":
+
     st.title("🧪 SchoolShield Hard Challenge Lab")
 
     st.write(
@@ -727,18 +901,20 @@ elif page == "Independent Test Lab":
         "Scores apply only to this dataset, not to real-world performance."
     )
 
-    fresh_tests = {
-        "Phishing Guardian": (FRESH_PHISHING, detect_phishing),
-        "Cyberbullying Guardian": (FRESH_BULLYING, detect_bullying),
-        "Privacy Guardian": (FRESH_PRIVACY, detect_privacy)
-    }
+    summary, detailed, all_results = get_challenge_results()
 
-    rows = []
-    detailed = []
+    st.markdown("---")
+    st.subheader("Challenge Performance Comparison")
 
-    for name, (tests, detector) in fresh_tests.i
-        "Guardian", "Total Tests", "Accuracy", "Precision",
-        "Recall", "F1 Score", "False Alarms", "Missed Warnings"
+    columns = [
+        "Guardian",
+        "Total Tests",
+        "Accuracy",
+        "Precision",
+        "Recall",
+        "F1 Score",
+        "False Alarms",
+        "Missed Warnings"
     ]
 
     shown = summary[columns].copy()
@@ -746,21 +922,22 @@ elif page == "Independent Test Lab":
     for col in ["Accuracy", "Precision", "Recall", "F1 Score"]:
         shown[col] = shown[col].map(lambda x: f"{x:.1f}%")
 
-    st.dataframe(shown, use_container_width=True, hide_index=True)
+    st.dataframe(
+        shown,
+        use_container_width=True,
+        hide_index=True
+    )
 
-    # ---------------- AUTOMATIC MISSED WARNING ANALYZER ----------------
+    # --------------------------------------------------------
+    # AUTOMATIC MISTAKE ANALYZER
+    # --------------------------------------------------------
 
     st.markdown("---")
     st.title("🔍 Automatic Mistake Analyzer")
 
     st.write(
-        "This section automatically finds messages that the Guardians "
-        "failed to detect or incorrectly flagged."
-    )
-
-    all_results = pd.concat(
-        [item[2] for item in detailed],
-        ignore_index=True
+        "Automatically finds messages that the Guardians failed "
+        "to detect or incorrectly flagged."
     )
 
     guardian_choice = st.selectbox(
@@ -825,8 +1002,11 @@ elif page == "Independent Test Lab":
     st.markdown("---")
 
     if filtered.empty:
+
         st.success("No mistakes found for this selection!")
+
     else:
+
         st.subheader("Messages Requiring Improvement")
 
         st.dataframe(
@@ -852,19 +1032,26 @@ elif page == "Independent Test Lab":
             key="download_mistakes"
         )
 
+    # --------------------------------------------------------
+    # DETAILED RESULTS
+    # --------------------------------------------------------
+
     st.markdown("---")
     st.subheader("Detailed Challenge Results")
 
     for name, metrics, df in detailed:
+
         with st.expander(name + " — View all 100 tests"):
 
             a, b, c, d = st.columns(4)
+
             a.metric("Accuracy", f"{metrics['Accuracy']:.1f}%")
             b.metric("Precision", f"{metrics['Precision']:.1f}%")
             c.metric("Recall", f"{metrics['Recall']:.1f}%")
             d.metric("F1 Score", f"{metrics['F1 Score']:.1f}%")
 
             e, f, g = st.columns(3)
+
             e.metric("False Alarms", metrics["False Alarms"])
             f.metric("Missed Warnings", metrics["Missed Warnings"])
             g.metric("Total Tests", metrics["Total Tests"])
@@ -882,6 +1069,10 @@ elif page == "Independent Test Lab":
                 mime="text/csv",
                 key="download_" + name
             )
+
+    # --------------------------------------------------------
+    # DOWNLOAD ALL TESTS
+    # --------------------------------------------------------
 
     st.markdown("---")
     st.subheader("Download All 300 Challenge Tests")
@@ -901,10 +1092,12 @@ elif page == "Independent Test Lab":
     )
 
 
-
-# ---------------- FOOTER ----------------
+# ============================================================
+# FOOTER
+# ============================================================
 
 st.markdown("---")
+
 st.caption(
     "SchoolShield | Student-built digital safety prototype. "
     "It may miss threats or flag harmless messages. "
