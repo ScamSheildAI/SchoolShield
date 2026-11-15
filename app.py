@@ -121,7 +121,7 @@ def detect_phishing(message):
             r"\b(open|click|tap|visit)\b.{0,70}\b(verify|verification|restore|unlock|recover|confirm)\b",
             "Directs the recipient to a verification or recovery action"
         )
-    ]
+    
 
     for pattern, reason in rules:
         if matches(pattern, text) and reason not in reasons:
@@ -186,7 +186,7 @@ suspicious = (
     "Requests verification of personal or account details"
 ),
     )
-
+]
     return suspicious, reasons
 
 # ============================================================
