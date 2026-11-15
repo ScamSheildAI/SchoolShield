@@ -703,12 +703,10 @@ elif page == "Performance Lab":
     st.dataframe(shown, use_container_width=True, hide_index=True)
 
 
-
-tems():
-        metrics, df = evaluate_guardian(tests, detector, name)
-        rows.append({"Guardian": name, **metrics})
-        detailed.append((name, metrics, df))
-
+for name, tests, detector in guardians:
+    metrics, df = evaluate_guardian(tests, detector, name)
+    rows.append({"Guardian": name, **metrics})
+    detailed.append((name, metrics, df))
     st.markdown("---")
     st.subheader("Challenge Performance Comparison")
 
