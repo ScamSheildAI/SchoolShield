@@ -1,5 +1,6 @@
 
 import re
+import hmac
 import streamlit as st
 import pandas as pd
 
@@ -13,42 +14,32 @@ st.set_page_config(
 # DESIGN
 # ============================================================
 
-
 st.markdown("""
 <style>
 .stApp {
     background: #081426;
     color: #F1F5F9;
 }
-
 [data-testid="stSidebar"] {
     background: #101F35;
 }
-
 h1, h2, h3 {
     color: #E2E8F0;
 }
-
 p, label, li {
     color: #CBD5E1;
 }
-
-/* METRIC CARDS */
 div[data-testid="stMetric"] {
     background: #14243B;
     border: 1px solid #263B58;
     padding: 15px;
     border-radius: 12px;
 }
-
-/* BUTTONS */
 .stButton button {
     background: #2563EB;
     color: #FFFFFF;
     border-radius: 8px;
 }
-
-/* MESSAGE INPUT BOX */
 div[data-testid="stTextArea"] textarea {
     background-color: #172A43 !important;
     color: #FFFFFF !important;
@@ -58,20 +49,14 @@ div[data-testid="stTextArea"] textarea {
     caret-color: #FFFFFF !important;
     font-size: 16px !important;
 }
-
-/* PLACEHOLDER TEXT */
 div[data-testid="stTextArea"] textarea::placeholder {
     color: #A9BCD3 !important;
     opacity: 1 !important;
 }
-
-/* INPUT FOCUS */
 div[data-testid="stTextArea"] textarea:focus {
     border: 2px solid #3B82F6 !important;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
 }
-
-/* MOBILE FRIENDLY */
 @media (max-width: 768px) {
     div[data-testid="stTextArea"] textarea {
         font-size: 16px !important;
@@ -82,16 +67,12 @@ div[data-testid="stTextArea"] textarea:focus {
 """, unsafe_allow_html=True)
 
 
-
 # ============================================================
 # HELPER
 # ============================================================
 
 def matches(pattern, text):
     return re.search(pattern, text, re.IGNORECASE) is not None
-
-
-
 
 
 # ============================================================
@@ -103,78 +84,42 @@ def detect_phishing(message):
     reasons = []
 
     rules = [
-        (
-            r"\b(share|send|tell|reveal|provide|confirm|give)\b.{0,60}\b(otp|verification code|password|passcode|login details)\b",
-            "Requests sensitive verification or login information"
-        ),
-        (
-            r"\b(otp|verification code|password|passcode|login details)\b.{0,60}\b(share|send|tell|reveal|provide|confirm|give)\b",
-            "Connects sensitive information with a sharing request"
-        ),
-        (
-            r"\b(pay|payment|fee|charge|transfer|send)\b.{0,55}\b(release|unlock|claim|restore|receive|avoid|prize|parcel|reward|account)\b",
-            "Links payment with a promised benefit or threat"
-        ),
-        (
-            r"\b(prize|reward|gift|scholarship|refund|lottery)\b.{0,55}\b(fee|payment|charge|transfer|bank details|account details)\b",
-            "Requests payment or details for an unexpected offer"
-        ),
-        (
-            r"\b(account|profile|access)\b.{0,45}\b(blocked|suspended|closed|locked|disabled)\b",
-            "Mentions a possible account restriction"
-        ),
-        (
-            r"\b(blocked|suspended|closed|locked|disabled)\b.{0,45}\b(account|profile|access)\b",
-            "Mentions a possible threat to account access"
-        ),
-        (
-            r"\b(unknown sender|stranger|unfamiliar caller|unexpected message|unfamiliar link|unknown link)\b",
-            "Mentions an unfamiliar sender or link"
-        ),
-        (
-            r"\b(click|tap|open|visit)\b.{0,50}\b(link|website|page)\b",
-            "Encourages opening a link"
-        ),
-        (
-            r"https?://|www\.",
-            "Contains a web link"
-        ),
-        (
-            r"\b(urgent|immediately|act now|before tonight|within 24 hours|right away|today only)\b",
-            "Uses urgency or pressure"
-        ),
-        (
-            r"\b(bank|delivery|parcel|school account|support team|security team)\b.{0,60}\b(confirm|verify|provide|send|reveal|pay)\b",
-            "Connects a claimed organisation with a request for action"
-        ),
-        (
-            r"\b(account|school account|profile|login)\b.{0,60}\b(verify|verification|confirm|validate|restore|reactivate|recover)\b",
-            "Requests account verification or restoration"
-        ),
-        (
-            r"\b(verify|verification|confirm|validate|restore|reactivate|recover)\b.{0,60}\b(account|school account|profile|login|access)\b",
-            "Connects verification with account access"
-        ),
-        (
-            r"\b(restore|restored|recover|unlock|reactivate)\b.{0,50}\b(account|access|profile|login)\b",
-            "Mentions restoring or unlocking account access"
-        ),
-        (
-            r"\b(open|click|tap|visit)\b.{0,70}\b(verify|verification|restore|unlock|recover|confirm)\b",
-            "Directs the recipient to a verification or recovery action"
-        ),
-        (
-            r"\b(verify|verification|confirm)\b.{0,60}\b(your|personal|account|login)?\s*(details|information|identity)\b",
-            "Requests verification of personal or account details"
-        ),
-        (
-            r"\b(account|school account|profile|access)\b.{0,80}\b(deactivation|deactivated|disable|disabled|suspend|suspended|termination)\b",
-            "Warns about possible account deactivation or suspension"
-        ),
-        (
-            r"\b(security check|security verification|complete a check|keep your access|maintain access|avoid deactivation)\b",
-            "Requests a security check to maintain account access"
-        )
+        (r"\b(share|send|tell|reveal|provide|confirm|give)\b.{0,60}\b(otp|verification code|password|passcode|login details)\b",
+         "Requests sensitive verification or login information"),
+        (r"\b(otp|verification code|password|passcode|login details)\b.{0,60}\b(share|send|tell|reveal|provide|confirm|give)\b",
+         "Connects sensitive information with a sharing request"),
+        (r"\b(pay|payment|fee|charge|transfer|send)\b.{0,55}\b(release|unlock|claim|restore|receive|avoid|prize|parcel|reward|account)\b",
+         "Links payment with a promised benefit or threat"),
+        (r"\b(prize|reward|gift|scholarship|refund|lottery)\b.{0,55}\b(fee|payment|charge|transfer|bank details|account details)\b",
+         "Requests payment or details for an unexpected offer"),
+        (r"\b(account|profile|access)\b.{0,45}\b(blocked|suspended|closed|locked|disabled)\b",
+         "Mentions a possible account restriction"),
+        (r"\b(blocked|suspended|closed|locked|disabled)\b.{0,45}\b(account|profile|access)\b",
+         "Mentions a possible threat to account access"),
+        (r"\b(unknown sender|stranger|unfamiliar caller|unexpected message|unfamiliar link|unknown link)\b",
+         "Mentions an unfamiliar sender or link"),
+        (r"\b(click|tap|open|visit)\b.{0,50}\b(link|website|page)\b",
+         "Encourages opening a link"),
+        (r"https?://|www\.",
+         "Contains a web link"),
+        (r"\b(urgent|immediately|act now|before tonight|within 24 hours|right away|today only)\b",
+         "Uses urgency or pressure"),
+        (r"\b(bank|delivery|parcel|school account|support team|security team)\b.{0,60}\b(confirm|verify|provide|send|reveal|pay)\b",
+         "Connects a claimed organisation with a request for action"),
+        (r"\b(account|school account|profile|login)\b.{0,60}\b(verify|verification|confirm|validate|restore|reactivate|recover)\b",
+         "Requests account verification or restoration"),
+        (r"\b(verify|verification|confirm|validate|restore|reactivate|recover)\b.{0,60}\b(account|school account|profile|login|access)\b",
+         "Connects verification with account access"),
+        (r"\b(restore|restored|recover|unlock|reactivate)\b.{0,50}\b(account|access|profile|login)\b",
+         "Mentions restoring or unlocking account access"),
+        (r"\b(open|click|tap|visit)\b.{0,70}\b(verify|verification|restore|unlock|recover|confirm)\b",
+         "Directs the recipient to a verification or recovery action"),
+        (r"\b(verify|verification|confirm)\b.{0,60}\b(your|personal|account|login)?\s*(details|information|identity)\b",
+         "Requests verification of personal or account details"),
+        (r"\b(account|school account|profile|access)\b.{0,80}\b(deactivation|deactivated|disable|disabled|suspend|suspended|termination)\b",
+         "Warns about possible account deactivation or suspension"),
+        (r"\b(security check|security verification|complete a check|keep your access|maintain access|avoid deactivation)\b",
+         "Requests a security check to maintain account access")
     ]
 
     for pattern, reason in rules:
@@ -182,56 +127,26 @@ def detect_phishing(message):
             reasons.append(reason)
 
     sensitive_request = (
-        matches(
-            r"\b(otp|verification code|password|passcode|bank details|login details)\b",
-            text
-        )
-        and matches(
-            r"\b(share|send|tell|reveal|provide|confirm|give)\b",
-            text
-        )
+        matches(r"\b(otp|verification code|password|passcode|bank details|login details)\b", text)
+        and matches(r"\b(share|send|tell|reveal|provide|confirm|give)\b", text)
     )
 
     payment_pressure = (
         matches(r"\b(pay|payment|fee|charge|transfer)\b", text)
-        and matches(
-            r"\b(prize|reward|parcel|account|scholarship|refund|unlock|release)\b",
-            text
-        )
+        and matches(r"\b(prize|reward|parcel|account|scholarship|refund|unlock|release)\b", text)
     )
 
     verification_link = (
-        matches(
-            r"\b(account|school account|profile|access|login)\b",
-            text
-        )
-        and matches(
-            r"\b(verify|verification|confirm|restore|recover|unlock|reactivate)\b",
-            text
-        )
-        and matches(
-            r"\b(link|website|page)\b|https?://|www\.",
-            text
-        )
+        matches(r"\b(account|school account|profile|access|login)\b", text)
+        and matches(r"\b(verify|verification|confirm|restore|recover|unlock|reactivate)\b", text)
+        and matches(r"\b(link|website|page)\b|https?://|www\.", text)
     )
 
     account_verification_pressure = (
-        matches(
-            r"\b(account|profile|access|login)\b",
-            text
-        )
-        and matches(
-            r"\b(restore|restored|recover|unlock|reactivate)\b",
-            text
-        )
-        and matches(
-            r"\b(verify|verification|confirm)\b",
-            text
-        )
-        and matches(
-            r"\b(details|information|identity)\b",
-            text
-        )
+        matches(r"\b(account|profile|access|login)\b", text)
+        and matches(r"\b(restore|restored|recover|unlock|reactivate)\b", text)
+        and matches(r"\b(verify|verification|confirm)\b", text)
+        and matches(r"\b(details|information|identity)\b", text)
     )
 
     if account_verification_pressure:
@@ -240,18 +155,9 @@ def detect_phishing(message):
             reasons.append(reason)
 
     account_deactivation_pressure = (
-        matches(
-            r"\b(account|school account|profile|access)\b",
-            text
-        )
-        and matches(
-            r"\b(deactivation|deactivated|disable|disabled|suspend|suspended|termination)\b",
-            text
-        )
-        and matches(
-            r"\b(security check|security verification|complete a check|verify)\b",
-            text
-        )
+        matches(r"\b(account|school account|profile|access)\b", text)
+        and matches(r"\b(deactivation|deactivated|disable|disabled|suspend|suspended|termination)\b", text)
+        and matches(r"\b(security check|security verification|complete a check|verify)\b", text)
     )
 
     if account_deactivation_pressure:
@@ -288,66 +194,36 @@ def detect_bullying(message):
     )
 
     patterns = [
-        (
-            r"\b(stupid|idiot|loser|worthless|ugly|dumb|pathetic)\b",
-            "Contains insulting language"
-        ),
-        (
-            r"\b(nobody likes you|everyone hates you|you have no friends|nobody wants you)\b",
-            "Contains hurtful personal remarks"
-        ),
-        (
-            r"\b(i will hurt you|i will beat you|you will regret this)\b",
-            "Contains threatening language"
-        ),
-        (
-            r"\b(go away|you don't belong here|you should not be here)\b",
-            "Contains exclusionary language"
-        ),
-        (
-            r"\b(shut up|hate you)\b",
-            "Contains hostile language"
-        ),
-        (
-            r"\b(spreading|spread|sharing)\s+(rumours|rumors|false stories)\b",
-            "Mentions spreading rumours"
-        ),
-        (
-            r"\b(make fun of|mock|humiliate|embarrass)\b",
-            "Mentions mocking or humiliating someone"
-        ),
-        (
-            r"\b(leave me out|exclude me|excluding me|leave me behind|not include me)\b",
-            "Describes deliberate exclusion"
-        ),
-        (
-            r"\b(deliberately|repeatedly|keeps|keep|constantly)\b.{0,65}\b(ignore|mock|exclude|insult|target|embarrass|humiliate)\b",
-            "Describes repeated targeted behaviour"
-        ),
-        (
-            r"\b(tell|telling|tells|pressure|pressuring)\b.{0,50}\b(others|everyone|friends)\b.{0,40}\b(ignore|avoid|exclude|not talk|not sit)\b",
-            "Describes encouraging others to exclude someone"
-        ),
-        (
-            r"\b(separate group|group chat)\b.{0,60}\b(mock|make fun|target|embarrass|insult)\b",
-            "Describes group-based targeting"
-        ),
-        (
-            r"\b(share|post|send)\b.{0,50}\b(embarrassing|private|unwanted)\b.{0,40}\b(picture|photo|story|message|comment)\b",
-            "May involve sharing embarrassing content"
-        ),
-        (
-            r"\b(after i asked them to stop|asked them to stop|told them to stop)\b",
-            "Indicates unwanted behaviour continued after being asked to stop"
-        ),
-        (
-            r"\b(turn my friends against me|stop being friends with me)\b",
-            "Describes attempts to damage friendships"
-        ),
-        (
-            r"\b(laugh whenever i speak|laugh at my mistakes|laugh at me)\b",
-            "Describes repeated humiliation"
-        )
+        (r"\b(stupid|idiot|loser|worthless|ugly|dumb|pathetic)\b",
+         "Contains insulting language"),
+        (r"\b(nobody likes you|everyone hates you|you have no friends|nobody wants you)\b",
+         "Contains hurtful personal remarks"),
+        (r"\b(i will hurt you|i will beat you|you will regret this)\b",
+         "Contains threatening language"),
+        (r"\b(go away|you don't belong here|you should not be here)\b",
+         "Contains exclusionary language"),
+        (r"\b(shut up|hate you)\b",
+         "Contains hostile language"),
+        (r"\b(spreading|spread|sharing)\s+(rumours|rumors|false stories)\b",
+         "Mentions spreading rumours"),
+        (r"\b(make fun of|mock|humiliate|embarrass)\b",
+         "Mentions mocking or humiliating someone"),
+        (r"\b(leave me out|exclude me|excluding me|leave me behind|not include me)\b",
+         "Describes deliberate exclusion"),
+        (r"\b(deliberately|repeatedly|keeps|keep|constantly)\b.{0,65}\b(ignore|mock|exclude|insult|target|embarrass|humiliate)\b",
+         "Describes repeated targeted behaviour"),
+        (r"\b(tell|telling|tells|pressure|pressuring)\b.{0,50}\b(others|everyone|friends)\b.{0,40}\b(ignore|avoid|exclude|not talk|not sit)\b",
+         "Describes encouraging others to exclude someone"),
+        (r"\b(separate group|group chat)\b.{0,60}\b(mock|make fun|target|embarrass|insult)\b",
+         "Describes group-based targeting"),
+        (r"\b(share|post|send)\b.{0,50}\b(embarrassing|private|unwanted)\b.{0,40}\b(picture|photo|story|message|comment)\b",
+         "May involve sharing embarrassing content"),
+        (r"\b(after i asked them to stop|asked them to stop|told them to stop)\b",
+         "Indicates unwanted behaviour continued after being asked to stop"),
+        (r"\b(turn my friends against me|stop being friends with me)\b",
+         "Describes attempts to damage friendships"),
+        (r"\b(laugh whenever i speak|laugh at my mistakes|laugh at me)\b",
+         "Describes repeated humiliation")
     ]
 
     for pattern, reason in patterns:
@@ -376,54 +252,30 @@ def detect_privacy(message):
     reasons = []
 
     patterns = [
-        (
-            r"\b(password|passcode)\s*(is|[:=])\s*\S+",
-            "May contain a password or passcode"
-        ),
-        (
-            r"\b(my password is|my passcode is)\s+\S+",
-            "May contain a password or passcode"
-        ),
-        (
-            r"\b(otp|verification code)\s*(is|[:=])?\s*\d{4,8}\b",
-            "May contain an OTP or verification code"
-        ),
-        (
-            r"\b\d{10}\b",
-            "May contain a 10-digit phone number"
-        ),
-        (
-            r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b",
-            "Contains an email address"
-        ),
-        (
-            r"\b\d{12}\b",
-            "May contain a 12-digit identification number"
-        ),
-        (
-            r"\b(my address is|i live at|home address is|my home address is)\b",
-            "Mentions a home address"
-        ),
-        (
-            r"\b(my school is|my school name is|i attend)\b",
-            "Mentions school identity"
-        ),
-        (
-            r"\b(date of birth|my birthday is|born on)\b",
-            "Mentions date of birth"
-        ),
-        (
-            r"\b(bank account number|account number is|card number|cvv)\b",
-            "Mentions banking or card information"
-        ),
-        (
-            r"\b(my phone number is|my mobile number is|contact number is)\b",
-            "Mentions a phone number"
-        ),
-        (
-            r"\b(my email is|my email address is|contact email is)\b",
-            "Mentions an email address"
-        )
+        (r"\b(password|passcode)\s*(is|[:=])\s*\S+",
+         "May contain a password or passcode"),
+        (r"\b(my password is|my passcode is)\s+\S+",
+         "May contain a password or passcode"),
+        (r"\b(otp|verification code)\s*(is|[:=])?\s*\d{4,8}\b",
+         "May contain an OTP or verification code"),
+        (r"\b\d{10}\b",
+         "May contain a 10-digit phone number"),
+        (r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b",
+         "Contains an email address"),
+        (r"\b\d{12}\b",
+         "May contain a 12-digit identification number"),
+        (r"\b(my address is|i live at|home address is|my home address is)\b",
+         "Mentions a home address"),
+        (r"\b(my school is|my school name is|i attend)\b",
+         "Mentions school identity"),
+        (r"\b(date of birth|my birthday is|born on)\b",
+         "Mentions date of birth"),
+        (r"\b(bank account number|account number is|card number|cvv)\b",
+         "Mentions banking or card information"),
+        (r"\b(my phone number is|my mobile number is|contact number is)\b",
+         "Mentions a phone number"),
+        (r"\b(my email is|my email address is|contact email is)\b",
+         "Mentions an email address")
     ]
 
     for pattern, reason in patterns:
@@ -483,18 +335,15 @@ PRIVACY_TESTS = [
 
 def build_challenge(positive, negative):
     cases = []
-
     for i in range(50):
         cases.append((positive[i % len(positive)], True))
-
     for i in range(50):
         cases.append((negative[i % len(negative)], False))
-
     return cases
 
 
 # ============================================================
-# PHISHING CHALLENGE EXAMPLES
+# CHALLENGE EXAMPLES
 # ============================================================
 
 FRESH_PHISHING = build_challenge(
@@ -544,11 +393,6 @@ FRESH_PHISHING = build_challenge(
     ]
 )
 
-
-# ============================================================
-# CYBERBULLYING CHALLENGE EXAMPLES
-# ============================================================
-
 FRESH_BULLYING = build_challenge(
     [
         "They deliberately leave me out of every group activity",
@@ -595,11 +439,6 @@ FRESH_BULLYING = build_challenge(
         "I enjoyed working with my classmates today"
     ]
 )
-
-
-# ============================================================
-# PRIVACY CHALLENGE EXAMPLES
-# ============================================================
 
 FRESH_PRIVACY = build_challenge(
     [
@@ -685,7 +524,6 @@ def evaluate_guardian(test_data, detector, guardian):
     fn = sum(df["Outcome"] == "Missed Warning")
 
     total = len(df)
-
     accuracy = (tp + tn) / total if total else 0
     precision = tp / (tp + fp) if tp + fp else 0
     recall = tp / (tp + fn) if tp + fn else 0
@@ -743,8 +581,8 @@ def guardian_page(title, description, detector, samples, label):
 
             if detected:
                 st.error(f"⚠️ {label} detected")
-
                 st.write("**Warning signs:**")
+
                 for reason in reasons:
                     st.write("- " + reason)
 
@@ -756,7 +594,6 @@ def guardian_page(title, description, detector, samples, label):
                 st.success(
                     "No warning signs detected by the current rules."
                 )
-
                 st.info(
                     "This does not guarantee that a message is safe. "
                     "Check the sender and context."
@@ -792,48 +629,90 @@ def get_challenge_results():
 
 
 # ============================================================
-# NAVIGATION
+# PRIVATE DEVELOPER AUTHENTICATION
 # ============================================================
+
+if "developer_authenticated" not in st.session_state:
+    st.session_state.developer_authenticated = False
 
 st.sidebar.title("🛡️ SchoolShield")
 st.sidebar.caption("One Platform. Three Layers of Protection.")
 
-# ---------------- DEVELOPER ACCESS ----------------
-
-developer_mode = False
-
 with st.sidebar.expander("🛠️ Developer Access"):
-    developer_password = st.text_input(
-        "Enter developer password",
-        type="password"
-    )
 
-    if developer_password:
-        try:
-            if developer_password == st.secrets["developer"]["password"]:
-                developer_mode = True
-                st.success("Developer access granted")
-            else:
-                st.error("Incorrect password")
-        except Exception:
-            st.error("Developer access is not configured.")
+    if st.session_state.developer_authenticated:
 
-st.sidebar.markdown("---")
+        st.success("Developer access granted")
+
+        if st.button("🔒 Log Out", key="developer_logout"):
+            st.session_state.developer_authenticated = False
+            st.session_state.navigation_page = "Dashboard"
+            st.rerun()
+
+    else:
+
+        with st.form("developer_login_form"):
+            entered_password = st.text_input(
+                "Developer password",
+                type="password"
+            )
+
+            login_submitted = st.form_submit_button(
+                "Unlock Developer Mode"
+            )
+
+        if login_submitted:
+            try:
+                saved_password = str(
+                    st.secrets["developer"]["password"]
+                )
+
+                if hmac.compare_digest(
+                    entered_password,
+                    saved_password
+                ):
+                    st.session_state.developer_authenticated = True
+                    st.success("Developer access granted")
+                    st.rerun()
+                else:
+                    st.error("Incorrect password")
+
+            except Exception:
+                st.error(
+                    "Developer access is not configured. "
+                    "Check Streamlit Secrets."
+                )
+
+developer_mode = st.session_state.developer_authenticated
+
+
+# ============================================================
+# NAVIGATION
+# ============================================================
 
 navigation_options = [
     "Dashboard",
     "Phishing Guardian",
     "Cyberbullying Guardian",
-    "Privacy Guardian",
-    "Performance Lab"
+    "Privacy Guardian"
 ]
 
 if developer_mode:
-    navigation_options.append("Independent Test Lab")
+    navigation_options.extend([
+        "Performance Lab",
+        "Independent Test Lab"
+    ])
+
+if (
+    "navigation_page" not in st.session_state
+    or st.session_state.navigation_page not in navigation_options
+):
+    st.session_state.navigation_page = "Dashboard"
 
 page = st.sidebar.radio(
     "NAVIGATION",
-    navigation_options
+    navigation_options,
+    key="navigation_page"
 )
 
 st.sidebar.markdown("---")
@@ -888,7 +767,7 @@ if page == "Dashboard":
     w.metric("Total Tests", "330")
 
     st.info(
-        "Use the sidebar to explore the Guardians and testing labs."
+        "Use the sidebar to explore the three Guardians."
     )
 
 
@@ -938,10 +817,10 @@ elif page == "Privacy Guardian":
 
 
 # ============================================================
-# PERFORMANCE LAB
+# PERFORMANCE LAB — PRIVATE
 # ============================================================
 
-elif page == "Performance Lab":
+elif page == "Performance Lab" and developer_mode:
 
     st.title("📊 SchoolShield Performance Lab")
 
@@ -1031,10 +910,10 @@ elif page == "Performance Lab":
 
 
 # ============================================================
-# INDEPENDENT TEST LAB
+# INDEPENDENT TEST LAB — PRIVATE
 # ============================================================
 
-elif page == "Independent Test Lab":
+elif page == "Independent Test Lab" and developer_mode:
 
     st.title("🧪 SchoolShield Hard Challenge Lab")
 
@@ -1076,7 +955,7 @@ elif page == "Independent Test Lab":
     )
 
     # --------------------------------------------------------
-    # AUTOMATIC MISTAKE ANALYZER
+    # AUTOMATIC MISTAKE ANALYZER — PRIVATE
     # --------------------------------------------------------
 
     st.markdown("---")
@@ -1149,11 +1028,9 @@ elif page == "Independent Test Lab":
     st.markdown("---")
 
     if filtered.empty:
-
         st.success("No mistakes found for this selection!")
 
     else:
-
         st.subheader("Messages Requiring Improvement")
 
         st.dataframe(
@@ -1237,6 +1114,17 @@ elif page == "Independent Test Lab":
         "False Alarm: a safe message flagged. "
         "Missed Warning: a threat not detected."
     )
+
+
+# ============================================================
+# UNEXPECTED PAGE FALLBACK
+# ============================================================
+
+elif page in ["Performance Lab", "Independent Test Lab"]:
+
+    st.session_state.navigation_page = "Dashboard"
+    st.warning("Developer access is required for this page.")
+    st.rerun()
 
 
 # ============================================================
