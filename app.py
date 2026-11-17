@@ -798,11 +798,25 @@ def get_challenge_results():
 st.sidebar.title("🛡️ SchoolShield")
 st.sidebar.caption("One Platform. Three Layers of Protection.")
 
-developer_mode = st.sidebar.toggle(
-    "🛠️ Developer Mode",
-    value=False,
-    help="Show internal testing and debugging tools."
-)
+# ---------------- DEVELOPER ACCESS ----------------
+
+developer_mode = False
+
+with st.sidebar.expander("🛠️ Developer Access"):
+    developer_password = st.text_input(
+        "Enter developer password",
+        type="password"
+    )
+
+    if developer_password:
+        try:
+            if developer_password == st.secrets["developer"]["password"]:
+                developer_mode = True
+                st.success("Developer access granted")
+            else:
+                st.error("Incorrect password")
+        except Exception:
+            st.error("Developer access is not configured.")
 
 st.sidebar.markdown("---")
 
