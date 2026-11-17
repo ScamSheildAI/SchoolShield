@@ -79,103 +79,225 @@ def matches(pattern, text):
 # PHISHING GUARDIAN
 # ============================================================
 
+
 def detect_phishing(message):
     text = message.lower()
     reasons = []
 
-    rules = [
-        (r"\b(share|send|tell|reveal|provide|confirm|give)\b.{0,60}\b(otp|verification code|password|passcode|login details)\b",
-         "Requests sensitive verification or login information"),
-        (r"\b(otp|verification code|password|passcode|login details)\b.{0,60}\b(share|send|tell|reveal|provide|confirm|give)\b",
-         "Connects sensitive information with a sharing request"),
-        (r"\b(pay|payment|fee|charge|transfer|send)\b.{0,55}\b(release|unlock|claim|restore|receive|avoid|prize|parcel|reward|account)\b",
-         "Links payment with a promised benefit or threat"),
-        (r"\b(prize|reward|gift|scholarship|refund|lottery)\b.{0,55}\b(fee|payment|charge|transfer|bank details|account details)\b",
-         "Requests payment or details for an unexpected offer"),
-        (r"\b(account|profile|access)\b.{0,45}\b(blocked|suspended|closed|locked|disabled)\b",
-         "Mentions a possible account restriction"),
-        (r"\b(blocked|suspended|closed|locked|disabled)\b.{0,45}\b(account|profile|access)\b",
-         "Mentions a possible threat to account access"),
-        (r"\b(unknown sender|stranger|unfamiliar caller|unexpected message|unfamiliar link|unknown link)\b",
-         "Mentions an unfamiliar sender or link"),
-        (r"\b(click|tap|open|visit)\b.{0,50}\b(link|website|page)\b",
-         "Encourages opening a link"),
-        (r"https?://|www\.",
-         "Contains a web link"),
-        (r"\b(urgent|immediately|act now|before tonight|within 24 hours|right away|today only)\b",
-         "Uses urgency or pressure"),
-        (r"\b(bank|delivery|parcel|school account|support team|security team)\b.{0,60}\b(confirm|verify|provide|send|reveal|pay)\b",
-         "Connects a claimed organisation with a request for action"),
-        (r"\b(account|school account|profile|login)\b.{0,60}\b(verify|verification|confirm|validate|restore|reactivate|recover)\b",
-         "Requests account verification or restoration"),
-        (r"\b(verify|verification|confirm|validate|restore|reactivate|recover)\b.{0,60}\b(account|school account|profile|login|access)\b",
-         "Connects verification with account access"),
-        (r"\b(restore|restored|recover|unlock|reactivate)\b.{0,50}\b(account|access|profile|login)\b",
-         "Mentions restoring or unlocking account access"),
-        (r"\b(open|click|tap|visit)\b.{0,70}\b(verify|verification|restore|unlock|recover|confirm)\b",
-         "Directs the recipient to a verification or recovery action"),
-        (r"\b(verify|verification|confirm)\b.{0,60}\b(your|personal|account|login)?\s*(details|information|identity)\b",
-         "Requests verification of personal or account details"),
-        (r"\b(account|school account|profile|access)\b.{0,80}\b(deactivation|deactivated|disable|disabled|suspend|suspended|termination)\b",
-         "Warns about possible account deactivation or suspension"),
-        (r"\b(security check|security verification|complete a check|keep your access|maintain access|avoid deactivation)\b",
-         "Requests a security check to maintain account access")
-    ]
+    # --------------------------------------------------------
+    # 1. CONTEXT DETECTION
+    # --------------------------------------------------------
 
-    for pattern, reason in rules:
-        if matches(pattern, text) and reason not in reasons:
-            reasons.append(reason)
+    educational_context = matches(
+        r"\b(our lesson|computer lesson|teacher explained|"
+        r"teacher taught|class discussed|we discussed|"
+        r"we are learning|textbook explains|worksheet asks|"
+        r"school presentation|educational message|"
+        r"studying examples|writing an essay|"
+        r"learning about|the chapter explains|"
+        r"our teacher|class presentation)\b",
+        text
+    )
+
+    protective_context = matches(
+        r"\b(never share|do not share|don't share|"
+        r"should not share|should never share|"
+        r"must not share|never reveal|do not reveal|"
+        r"don't reveal|keep your password private|"
+        r"protect your password|protect your account|"
+        r"keep your details private|"
+        r"should be kept secret)\b",
+        text
+    )
+
+    # --------------------------------------------------------
+    # 2. DIRECT SENSITIVE INFORMATION REQUESTS
+    # --------------------------------------------------------
 
     sensitive_request = (
-        matches(r"\b(otp|verification code|password|passcode|bank details|login details)\b", text)
-        and matches(r"\b(share|send|tell|reveal|provide|confirm|give)\b", text)
+        matches(
+            r"\b(share|send|tell|reveal|provide|give|"
+            r"submit|enter|type|reply with)\b"
+            r".{0,60}"
+            r"\b(otp|verification code|password|passcode|"
+            r"login details|bank details)\b",
+            text
+        )
+        or
+        matches(
+            r"\b(otp|verification code|password|passcode|"
+            r"login details|bank details)\b"
+            r".{0,60}"
+            r"\b(share|send|tell|reveal|provide|give|"
+            r"submit|enter|type)\b",
+            text
+        )
     )
+
+    if sensitive_request and not protective_context:
+        reasons.append(
+            "Requests sensitive verification or login information"
+        )
+
+    # --------------------------------------------------------
+    # 3. PAYMENT SCAMS
+    # --------------------------------------------------------
 
     payment_pressure = (
-        matches(r"\b(pay|payment|fee|charge|transfer)\b", text)
-        and matches(r"\b(prize|reward|parcel|account|scholarship|refund|unlock|release)\b", text)
+        matches(
+            r"\b(pay|payment|fee|charge|transfer|send money)\b",
+            text
+        )
+        and
+        matches(
+            r"\b(prize|reward|parcel|scholarship|refund|"
+            r"lottery|unlock|release|claim|gift)\b",
+            text
+        )
     )
 
-    verification_link = (
-        matches(r"\b(account|school account|profile|access|login)\b", text)
-        and matches(r"\b(verify|verification|confirm|restore|recover|unlock|reactivate)\b", text)
-        and matches(r"\b(link|website|page)\b|https?://|www\.", text)
+    if payment_pressure:
+        reasons.append(
+            "Links a payment request with an unexpected benefit"
+        )
+
+    # --------------------------------------------------------
+    # 4. ACCOUNT THREATS
+    # --------------------------------------------------------
+
+    account_threat = (
+        matches(
+            r"\b(account|school account|profile|access)\b",
+            text
+        )
+        and
+        matches(
+            r"\b(blocked|suspended|closed|locked|disabled|"
+            r"deactivated|termination)\b",
+            text
+        )
+        and
+        matches(
+            r"\b(urgent|immediately|today|act now|"
+            r"within 24 hours|right away|before tonight)\b",
+            text
+        )
     )
 
-    account_verification_pressure = (
-        matches(r"\b(account|profile|access|login)\b", text)
-        and matches(r"\b(restore|restored|recover|unlock|reactivate)\b", text)
-        and matches(r"\b(verify|verification|confirm)\b", text)
-        and matches(r"\b(details|information|identity)\b", text)
+    if account_threat:
+        reasons.append(
+            "Uses an account restriction threat with urgency"
+        )
+
+    # --------------------------------------------------------
+    # 5. DECEPTIVE VERIFICATION
+    # --------------------------------------------------------
+
+    verification_request = (
+        matches(
+            r"\b(account|school account|profile|login|access)\b",
+            text
+        )
+        and
+        matches(
+            r"\b(verify|verification|confirm|restore|"
+            r"recover|unlock|reactivate)\b",
+            text
+        )
+        and
+        matches(
+            r"\b(link|website|page|details|information|"
+            r"identity|password|otp)\b|https?://|www\.",
+            text
+        )
     )
 
-    if account_verification_pressure:
-        reason = "Connects account restoration with verification of personal details"
-        if reason not in reasons:
-            reasons.append(reason)
+    if verification_request:
+        reasons.append(
+            "Connects account verification with a request for action"
+        )
 
-    account_deactivation_pressure = (
-        matches(r"\b(account|school account|profile|access)\b", text)
-        and matches(r"\b(deactivation|deactivated|disable|disabled|suspend|suspended|termination)\b", text)
-        and matches(r"\b(security check|security verification|complete a check|verify)\b", text)
+    # --------------------------------------------------------
+    # 6. SUSPICIOUS LINKS
+    # --------------------------------------------------------
+
+    link_action = (
+        matches(
+            r"\b(click|tap|open|visit)\b.{0,50}"
+            r"\b(link|website|page)\b",
+            text
+        )
+        or matches(r"https?://|www\.", text)
     )
 
-    if account_deactivation_pressure:
-        reason = "Connects account deactivation with a security verification request"
-        if reason not in reasons:
-            reasons.append(reason)
+    suspicious_link_context = (
+        link_action
+        and matches(
+            r"\b(urgent|verify|verification|password|"
+            r"otp|reward|prize|blocked|suspended|"
+            r"unlock|restore|payment)\b",
+            text
+        )
+    )
 
+    if suspicious_link_context:
+        reasons.append(
+            "Contains a link connected with suspicious activity"
+        )
+
+    # --------------------------------------------------------
+    # 7. ORGANISATION IMPERSONATION
+    # --------------------------------------------------------
+
+    impersonation_request = (
+        matches(
+            r"\b(bank|delivery|parcel|school account|"
+            r"support team|security team|administrator)\b",
+            text
+        )
+        and
+        matches(
+            r"\b(demand|demands|asking|asks|request|"
+            r"requests|send|provide|reveal|confirm)\b",
+            text
+        )
+        and
+        matches(
+            r"\b(password|otp|verification code|"
+            r"bank details|login details|payment)\b",
+            text
+        )
+    )
+
+    if impersonation_request and not protective_context:
+        reasons.append(
+            "Uses an organisation identity to request sensitive information"
+        )
+
+    # --------------------------------------------------------
+    # 8. CONTEXT-AWARE DECISION
+    # --------------------------------------------------------
+
+    # Protective educational messages should not be flagged
+    # merely because they mention passwords, OTPs or scams.
+    if educational_context and protective_context and not (
+        sensitive_request and not protective_context
+    ):
+        return False, []
+
+    # A message with no meaningful warning signs is not flagged.
+    # Two or more independent warning signs increase concern.
     suspicious = (
         sensitive_request
         or payment_pressure
-        or verification_link
-        or account_verification_pressure
-        or account_deactivation_pressure
+        or account_threat
+        or verification_request
+        or suspicious_link_context
+        or impersonation_request
         or len(reasons) >= 2
     )
 
     return suspicious, reasons
-
 
 # ============================================================
 # CYBERBULLYING GUARDIAN
