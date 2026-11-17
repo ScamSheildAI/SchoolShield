@@ -13,34 +13,74 @@ st.set_page_config(
 # DESIGN
 # ============================================================
 
+
 st.markdown("""
 <style>
 .stApp {
     background: #081426;
     color: #F1F5F9;
 }
+
 [data-testid="stSidebar"] {
     background: #101F35;
 }
+
 h1, h2, h3 {
     color: #E2E8F0;
 }
+
 p, label, li {
     color: #CBD5E1;
 }
+
+/* METRIC CARDS */
 div[data-testid="stMetric"] {
     background: #14243B;
     border: 1px solid #263B58;
     padding: 15px;
     border-radius: 12px;
 }
+
+/* BUTTONS */
 .stButton button {
     background: #2563EB;
-    color: white;
+    color: #FFFFFF;
     border-radius: 8px;
+}
+
+/* MESSAGE INPUT BOX */
+div[data-testid="stTextArea"] textarea {
+    background-color: #172A43 !important;
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    border: 1px solid #49617D !important;
+    border-radius: 10px !important;
+    caret-color: #FFFFFF !important;
+    font-size: 16px !important;
+}
+
+/* PLACEHOLDER TEXT */
+div[data-testid="stTextArea"] textarea::placeholder {
+    color: #A9BCD3 !important;
+    opacity: 1 !important;
+}
+
+/* INPUT FOCUS */
+div[data-testid="stTextArea"] textarea:focus {
+    border: 2px solid #3B82F6 !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* MOBILE FRIENDLY */
+@media (max-width: 768px) {
+    div[data-testid="stTextArea"] textarea {
+        font-size: 16px !important;
+        min-height: 130px;
+    }
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 # ============================================================
