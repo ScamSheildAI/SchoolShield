@@ -75,6 +75,13 @@ def matches(pattern, text):
     return re.search(pattern, text, re.IGNORECASE) is not None
 
 
+
+def contains_any(text, phrases):
+    """Unicode-safe phrase matching for Telugu, Hindi and Russian."""
+    lowered = text.casefold()
+    return any(phrase.casefold() in lowered for phrase in phrases)
+
+
 # ============================================================
 # PHISHING GUARDIAN
 # ============================================================
@@ -275,6 +282,89 @@ def detect_phishing(message):
         )
 
     # --------------------------------------------------------
+    # 8. TELUGU, HINDI AND RUSSIAN PHISHING PATTERNS
+    # --------------------------------------------------------
+    # The interface and all explanations remain in English.
+    # These are phrase-based rules, not full translation or AI understanding.
+
+    multi_sensitive_terms = [
+        "ఓటీపీ", "otp", "పాస్‌వర్డ్", "పాస్వర్డ్", "రహస్య కోడ్",
+        "ओटीपी", "पासवर्ड", "सत्यापन कोड", "गुप्त कोड",
+        "одноразовый пароль", "пароль", "код подтверждения"
+    ]
+    multi_request_terms = [
+        "పంపండి", "చెప్పండి", "పంచుకోండి", "నమోదు చేయండి", "ఇవ్వండి",
+        "भेजें", "बताएं", "साझा करें", "दर्ज करें", "दीजिए",
+        "отправьте", "сообщите", "поделитесь", "введите", "предоставьте"
+    ]
+    multi_urgent_terms = [
+        "వెంటనే", "తక్షణమే", "ఈరోజే", "ఇప్పుడే",
+        "तुरंत", "अभी", "आज ही", "शीघ्र",
+        "срочно", "немедленно", "сегодня", "прямо сейчас"
+    ]
+    multi_account_terms = [
+        "ఖాతా", "అకౌంట్", "खाता", "аккаунт", "учётная запись"
+    ]
+    multi_block_terms = [
+        "బ్లాక్", "నిలిపివేయబడుతుంది", "మూసివేయబడుతుంది",
+        "बंद", "ब्लॉक", "निलंबित", "заблокирован", "закрыт", "приостановлен"
+    ]
+    multi_payment_terms = [
+        "చెల్లింపు", "డబ్బు పంపండి", "ఫీజు", "బహుమతి",
+        "भुगतान", "पैसे भेजें", "शुल्क", "इनाम",
+        "оплата", "переведите деньги", "платёж", "награда", "приз"
+    ]
+    multi_link_terms = [
+        "లింక్", "క్లిక్ చేయండి", "లింక్ తెరవండి",
+        "लिंक", "क्लिक करें", "ссылка", "перейдите по ссылке"
+    ]
+    multi_verify_terms = [
+        "ధృవీకరించండి", "నిర్ధారించండి", "వెరిఫై",
+        "सत्यापित करें", "पुष्टि करें", "проверьте", "подтвердите"
+    ]
+
+    multi_sensitive_request = (
+        contains_any(text, multi_sensitive_terms)
+        and contains_any(text, multi_request_terms)
+    )
+    multi_account_threat = (
+        contains_any(text, multi_account_terms)
+        and contains_any(text, multi_block_terms)
+        and contains_any(text, multi_urgent_terms)
+    )
+    multi_payment_scam = (
+        contains_any(text, multi_payment_terms)
+        and contains_any(text, [
+            "బహుమతి", "బహుమానం", "రివార్డ్", "విడుదల",
+            "इनाम", "पुरस्कार", "रिवॉर्ड", "जारी",
+            "награда", "приз", "вознаграждение", "получить"
+        ])
+    )
+    multi_verification_link = (
+        contains_any(text, multi_verify_terms)
+        and (
+            contains_any(text, multi_link_terms)
+            or contains_any(text, multi_account_terms)
+        )
+    )
+
+    if multi_sensitive_request and not contains_any(text, [
+        "పంచుకోవద్దు", "పంపవద్దు", "చెప్పకండి",
+        "साझा न करें", "मत भेजें", "कभी न बताएं",
+        "не сообщайте", "не отправляйте", "не делитесь"
+    ]):
+        reasons.append("Requests sensitive verification or login information")
+
+    if multi_account_threat:
+        reasons.append("Uses an account restriction threat with urgency")
+
+    if multi_payment_scam:
+        reasons.append("Links a payment request with an unexpected benefit")
+
+    if multi_verification_link:
+        reasons.append("Connects account verification with a request for action")
+
+    # --------------------------------------------------------
     # 8. CONTEXT-AWARE DECISION
     # --------------------------------------------------------
 
@@ -294,6 +384,10 @@ def detect_phishing(message):
         or verification_request
         or suspicious_link_context
         or impersonation_request
+        or multi_sensitive_request
+        or multi_account_threat
+        or multi_payment_scam
+        or multi_verification_link
         or len(reasons) >= 2
     )
 
@@ -352,6 +446,32 @@ def detect_bullying(message):
         if matches(pattern, text) and reason not in reasons:
             reasons.append(reason)
 
+    # Telugu, Hindi and Russian phrase rules. Results are always English.
+    multilingual_bullying = [
+        (["మూర్ఖుడు", "వెధవ", "నీచుడు", "అందరూ నిన్ను ద్వేషిస్తారు",
+          "నీకు స్నేహితులు లేరు", "నిన్ను కొడతాను"],
+         "Contains insulting or threatening language"),
+        (["बेवकूफ", "मूर्ख", "घटिया", "सब तुमसे नफरत करते हैं",
+          "तुम्हारा कोई दोस्त नहीं", "मैं तुम्हें मारूंगा", "दूर रहो"],
+         "Contains insulting or threatening language"),
+        (["дурак", "идиот", "никому ты не нравишься",
+          "у тебя нет друзей", "я тебя побью", "заткнись", "ненавижу тебя"],
+         "Contains insulting or threatening language"),
+        (["నిన్ను గ్రూప్‌లో చేర్చము", "నిన్ను దూరంగా ఉంచుతున్నారు",
+          "నీ గురించి తప్పుడు మాటలు", "నిన్ను అవమానిస్తున్నారు"],
+         "Describes exclusion or repeated humiliation"),
+        (["तुम्हें समूह में शामिल नहीं करेंगे", "तुम्हें बाहर रखेंगे",
+          "तुम्हारा मज़ाक उड़ाते हैं", "तुम्हें अपमानित करते हैं"],
+         "Describes exclusion or repeated humiliation"),
+        (["तебя не возьмут в группу", "тебя исключают",
+          "над тобой смеются", "тебя унижают"],
+         "Describes exclusion or repeated humiliation")
+    ]
+
+    for phrases, reason in multilingual_bullying:
+        if contains_any(text, phrases) and reason not in reasons:
+            reasons.append(reason)
+
     if educational_context:
         return False, []
 
@@ -402,6 +522,30 @@ def detect_privacy(message):
 
     for pattern, reason in patterns:
         if matches(pattern, text) and reason not in reasons:
+            reasons.append(reason)
+
+    # Multilingual labels for personal information. Numeric patterns above
+    # continue to work across scripts when users type digits.
+    multilingual_privacy = [
+        (["నా పాస్‌వర్డ్", "నా పాస్వర్డ్", "నా ఓటీపీ", "నా రహస్య కోడ్"],
+         "May contain a password or verification code"),
+        (["मेरा पासवर्ड", "मेरा ओटीपी", "मेरा सत्यापन कोड"],
+         "May contain a password or verification code"),
+        (["мой пароль", "мой одноразовый пароль", "мой код подтверждения"],
+         "May contain a password or verification code"),
+        (["నా ఫోన్ నంబర్", "నా మొబైల్ నంబర్", "నా ఇమెయిల్",
+          "నా చిరునామా", "నా పుట్టిన తేదీ"],
+         "May contain personal information"),
+        (["मेरा फोन नंबर", "मेरा मोबाइल नंबर", "मेरा ईमेल",
+          "मेरा पता", "मेरी जन्मतिथि"],
+         "May contain personal information"),
+        (["мой номер телефона", "моя электронная почта",
+          "мой адрес", "моя дата рождения"],
+         "May contain personal information")
+    ]
+
+    for phrases, reason in multilingual_privacy:
+        if contains_any(text, phrases) and reason not in reasons:
             reasons.append(reason)
 
     return len(reasons) > 0, reasons
