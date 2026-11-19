@@ -1263,6 +1263,26 @@ def guardian_page(title, description, detector, samples, label):
     sample = ""
     if selected != "Choose an example":
         sample = samples[int(selected.split()[-1]) - 1]
+            from streamlit_mic_recorder import speech_to_text
+
+    voice_consent = st.checkbox(
+        "I agree to send my voice to Google for transcription. I will use fictional examples and my own voice.",
+        key=title + "_voice_consent"
+    )
+
+    spoken_message = None
+    if voice_consent:
+        spoken_message = speech_to_text(
+            language="en-IN",
+            start_prompt="🎙️ Start speaking",
+            stop_prompt="⏹️ Stop recording",
+            just_once=True,
+            use_container_width=True,
+            key=title + "_voice"
+        )
+
+        if spoken_message:
+            st.session_state[title + "_message"] = spoken_message
 
     message = st.text_area(
         "Enter a fictional message:",
@@ -1276,78 +1296,29 @@ def guardian_page(title, description, detector, samples, label):
         "contact details, private conversations or identifying information."
     )
 
-    with st.expander("🎙️ Optional voice message analysis"):
-        st.write(
-            "Record a short fictional example. Gemini can transcribe it and "
-            "comment cautiously on the apparent wording and vocal delivery."
-        )
-        audio_recording = None
-        if hasattr(st, "audio_input"):
-            audio_recording = st.audio_input(
-                "Record a fictional voice example",
-                key=title + "_audio"
-            )
-            if audio_recording is not None:
-                st.audio(audio_recording)
+    
+        if st.button("🔍 Analyse Message", key=title + "_analyse"):
+        if not message.strip():
+            st.warning("Please enter or record a fictional message.")
         else:
-            st.info(
-                "Voice recording requires a newer Streamlit version. "
-                "Update requirements.txt to streamlit>=1.40.0."
-            )
+            detected, reasons = detector(message)
 
-    consent = st.checkbox(
-        "I understand that the fictional text or recording I submit will be sent "
-        "to Google Gemini for analysis. I will not submit real private information "
-        "or another person's private voice/message.",
-        value=False,
-        key=title + "_gemini_consent"
-    )
+            if detected:
+                st.error(f"⚠️ {label} detected")
+                st.markdown("**Warning signs:**")
+                for reason in reasons:
+                    st.markdown("- " + reason)
 
-    if st.button("🧠 Analyse with Gemini", key=title + "_analyse"):
-        if not message.strip() and audio_recording is None:
-            st.warning("Enter a fictional message or record a fictional voice example.")
-        elif not consent:
-            st.warning("Please confirm the data-sharing notice before using Gemini.")
-        else:
-            audio_bytes = audio_recording.getvalue() if audio_recording is not None else None
-            with st.spinner("Gemini is analysing the message context..."):
-                try:
-                    ai_result = analyse_with_gemini(
-                        title,
-                        message=message,
-                        audio_bytes=audio_bytes
-                    )
-                    analysed_message = message.strip()
-                    if not analysed_message and ai_result.get("transcript"):
-                        analysed_message = ai_result["transcript"]
-                    show_gemini_result(
-                        title,
-                        analysed_message,
-                        detector,
-                        label,
-                        ai_result
-                    )
-                except Exception as error:
-                    st.error(
-                        "Gemini analysis could not be completed. Check that "
-                        "GEMINI_API_KEY is saved in Streamlit Secrets, that "
-                        "google-genai is in requirements.txt, and that the API "
-                        "quota/model is available. Your API key has not been shown."
-                    )
-                    st.caption(
-                        "Technical error category: " + type(error).__name__ +
-                        ". The rule-based detector is still available as a backup."
-                    )
-                    if message.strip():
-                        detected, reasons = detector(message)
-                        if detected:
-                            st.warning("The existing rules found possible warning signs:")
-                            for reason in reasons:
-                                st.markdown("- " + reason)
-                        else:
-                            st.info("The existing rules found no warning signs in this example.")
-
-
+                st.info(
+                    "Do not share private information. "
+                    "Ask a trusted adult for help when needed."
+                )
+            else:
+                st.success("No warning signs detected by the current rules.")
+                st.info(
+                    "This does not guarantee that a message is safe. "
+                    "Always check the sender and context."
+                )
 # ============================================================
 # CHALLENGE EVALUATION HELPER
 # ============================================================
