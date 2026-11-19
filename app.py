@@ -82,11 +82,19 @@ def contains_any(text, phrases):
     return any(phrase.casefold() in lowered for phrase in phrases)
 
 
+# ============================================================
+# PHISHING GUARDIAN
+# ============================================================
+
+
 def detect_phishing(message):
     text = message.lower()
     reasons = []
 
+    # --------------------------------------------------------
     # 1. CONTEXT DETECTION
+    # --------------------------------------------------------
+
     educational_context = matches(
         r"\b(our lesson|computer lesson|teacher explained|"
         r"teacher taught|class discussed|we discussed|"
@@ -102,29 +110,36 @@ def detect_phishing(message):
         r"\b(never share|do not share|don't share|"
         r"should not share|should never share|"
         r"must not share|never reveal|do not reveal|"
-        r"don't reveal|never tell anyone|do not tell anyone|"
-        r"don't tell anyone|should not tell anyone|"
-        r"never give anyone|do not give anyone|"
-        r"don't give anyone|keep your password private|"
+        r"don't reveal|keep your password private|"
         r"protect your password|protect your account|"
         r"keep your details private|"
         r"should be kept secret)\b",
         text
     )
 
+    active_request_after_warning = matches(
+        r"\b(asks?|tells?|demands?|requests?|instructs?)\b.{0,80}\b(share|send|reveal|provide|give|submit|enter|type)\b",
+        text
+    )
+    protective_only = protective_context and not active_request_after_warning
+
+    # --------------------------------------------------------
     # 2. DIRECT SENSITIVE INFORMATION REQUESTS
+    # --------------------------------------------------------
+
     sensitive_request = (
         matches(
             r"\b(share|send|tell|reveal|provide|give|"
             r"submit|enter|type|reply with)\b"
             r".{0,60}"
             r"\b(otp|verification code|password|passcode|"
-            r"login details|bank details|pin)\b",
+            r"login details|bank details)\b",
             text
         )
-        or matches(
+        or
+        matches(
             r"\b(otp|verification code|password|passcode|"
-            r"login details|bank details|pin)\b"
+            r"login details|bank details)\b"
             r".{0,60}"
             r"\b(share|send|tell|reveal|provide|give|"
             r"submit|enter|type)\b",
@@ -132,56 +147,22 @@ def detect_phishing(message):
         )
     )
 
-    # Check each sentence separately so a warning in one
-    # sentence does not hide a real request in another.
-    sentences = re.split(r"[.!?\n]+", text)
-    for sentence in sentences:
-        sentence_request = (
-            matches(
-                r"\b(share|send|tell|reveal|provide|give|"
-                r"submit|enter|type|reply with)\b"
-                r".{0,60}"
-                r"\b(otp|verification code|password|passcode|"
-                r"login details|bank details|pin)\b",
-                sentence
-            )
-            or matches(
-                r"\b(otp|verification code|password|passcode|"
-                r"login details|bank details|pin)\b"
-                r".{0,60}"
-                r"\b(share|send|tell|reveal|provide|give|"
-                r"submit|enter|type)\b",
-                sentence
-            )
+    if sensitive_request and not protective_only:
+        reasons.append(
+            "Requests sensitive verification or login information"
         )
 
-        sentence_protective = matches(
-            r"\b(never share|do not share|don't share|"
-            r"should not share|should never share|"
-            r"must not share|never reveal|do not reveal|"
-            r"don't reveal|never tell anyone|do not tell anyone|"
-            r"don't tell anyone|should not tell anyone|"
-            r"never give anyone|do not give anyone|"
-            r"don't give anyone|keep your password private|"
-            r"protect your password|protect your account|"
-            r"keep your details private|"
-            r"should be kept secret)\b",
-            sentence
-        )
-
-        if sentence_request and not sentence_protective:
-            reasons.append(
-                "Requests sensitive verification or login information"
-            )
-            break
-
+    # --------------------------------------------------------
     # 3. PAYMENT SCAMS
+    # --------------------------------------------------------
+
     payment_pressure = (
         matches(
             r"\b(pay|payment|fee|charge|transfer|send money)\b",
             text
         )
-        and matches(
+        and
+        matches(
             r"\b(prize|reward|parcel|scholarship|refund|"
             r"lottery|unlock|release|claim|gift)\b",
             text
@@ -193,18 +174,58 @@ def detect_phishing(message):
             "Links a payment request with an unexpected benefit"
         )
 
+    # --------------------------------------------------------
+    # 3B. ADDITIONAL HIGH-RISK REQUESTS
+    # --------------------------------------------------------
+
+    credential_or_private_request = (
+        matches(
+            r"\b(reveal|provide|send|share|confirm|confirmed|requests?|submit|enter)\b.{0,65}"
+            r"\b(digits sent to your phone|banking information|private details|"
+            r"account credentials|login credentials|personal details|"
+            r"security code|code sent to your phone)\b",
+            text
+        )
+        or matches(
+            r"\b(password|passcode|credentials|banking information|private details)\b"
+            r".{0,55}\b(confirm|confirmed|send|share|provide|enter|reveal)\b",
+            text
+        )
+    )
+    if credential_or_private_request:
+        reasons.append("Requests private account or personal information")
+
+    money_pressure = (
+        matches(r"\b(send funds|transfer money|move my savings|another transfer|pay first|pay a fee)\b", text)
+        and matches(r"\b(caller|stranger|unknown|unexpected|protect|prize|contest|parcel|refund|reward|account|payment)\b", text)
+    )
+    if money_pressure:
+        reasons.append("Pressures the recipient to make an unexpected payment or transfer")
+
+    risky_app_request = (
+        matches(r"\b(install|download)\b.{0,45}\b(unknown|unfamiliar|unverified)\b.{0,30}\b(app|application)\b", text)
+        and matches(r"\b(restore|unlock|recover|account|access)\b", text)
+    )
+    if risky_app_request:
+        reasons.append("Requests installation of an unverified app to solve an account issue")
+
+    # --------------------------------------------------------
     # 4. ACCOUNT THREATS
+    # --------------------------------------------------------
+
     account_threat = (
         matches(
             r"\b(account|school account|profile|access)\b",
             text
         )
-        and matches(
+        and
+        matches(
             r"\b(blocked|suspended|closed|locked|disabled|"
             r"deactivated|termination)\b",
             text
         )
-        and matches(
+        and
+        matches(
             r"\b(urgent|immediately|today|act now|"
             r"within 24 hours|right away|before tonight)\b",
             text
@@ -216,18 +237,23 @@ def detect_phishing(message):
             "Uses an account restriction threat with urgency"
         )
 
+    # --------------------------------------------------------
     # 5. DECEPTIVE VERIFICATION
+    # --------------------------------------------------------
+
     verification_request = (
         matches(
             r"\b(account|school account|profile|login|access)\b",
             text
         )
-        and matches(
+        and
+        matches(
             r"\b(verify|verification|confirm|restore|"
             r"recover|unlock|reactivate)\b",
             text
         )
-        and matches(
+        and
+        matches(
             r"\b(link|website|page|details|information|"
             r"identity|password|otp)\b|https?://|www\.",
             text
@@ -239,7 +265,10 @@ def detect_phishing(message):
             "Connects account verification with a request for action"
         )
 
+    # --------------------------------------------------------
     # 6. SUSPICIOUS LINKS
+    # --------------------------------------------------------
+
     link_action = (
         matches(
             r"\b(click|tap|open|visit)\b.{0,50}"
@@ -264,19 +293,24 @@ def detect_phishing(message):
             "Contains a link connected with suspicious activity"
         )
 
+    # --------------------------------------------------------
     # 7. ORGANISATION IMPERSONATION
+    # --------------------------------------------------------
+
     impersonation_request = (
         matches(
             r"\b(bank|delivery|parcel|school account|"
             r"support team|security team|administrator)\b",
             text
         )
-        and matches(
+        and
+        matches(
             r"\b(demand|demands|asking|asks|request|"
             r"requests|send|provide|reveal|confirm)\b",
             text
         )
-        and matches(
+        and
+        matches(
             r"\b(password|otp|verification code|"
             r"bank details|login details|payment)\b",
             text
@@ -288,45 +322,43 @@ def detect_phishing(message):
             "Uses an organisation identity to request sensitive information"
         )
 
-    # 8. MULTILINGUAL PATTERNS
+    # --------------------------------------------------------
+    # 8. TELUGU, HINDI AND RUSSIAN PHISHING PATTERNS
+    # --------------------------------------------------------
+    # The interface and all explanations remain in English.
+    # These are phrase-based rules, not full translation or AI understanding.
+
     multi_sensitive_terms = [
         "ఓటీపీ", "otp", "పాస్‌వర్డ్", "పాస్వర్డ్", "రహస్య కోడ్",
         "ओटीपी", "पासवर्ड", "सत्यापन कोड", "गुप्त कोड",
         "одноразовый пароль", "пароль", "код подтверждения"
     ]
-
     multi_request_terms = [
         "పంపండి", "చెప్పండి", "పంచుకోండి", "నమోదు చేయండి", "ఇవ్వండి",
         "भेजें", "बताएं", "साझा करें", "दर्ज करें", "दीजिए",
         "отправьте", "сообщите", "поделитесь", "введите", "предоставьте"
     ]
-
     multi_urgent_terms = [
         "వెంటనే", "తక్షణమే", "ఈరోజే", "ఇప్పుడే",
         "तुरंत", "अभी", "आज ही", "शीघ्र",
         "срочно", "немедленно", "сегодня", "прямо сейчас"
     ]
-
     multi_account_terms = [
         "ఖాతా", "అకౌంట్", "खाता", "аккаунт", "учётная запись"
     ]
-
     multi_block_terms = [
         "బ్లాక్", "నిలిపివేయబడుతుంది", "మూసివేయబడుతుంది",
         "बंद", "ब्लॉक", "निलंबित", "заблокирован", "закрыт", "приостановлен"
     ]
-
     multi_payment_terms = [
         "చెల్లింపు", "డబ్బు పంపండి", "ఫీజు", "బహుమతి",
         "भुगतान", "पैसे भेजें", "शुल्क", "इनाम",
         "оплата", "переведите деньги", "платёж", "награда", "приз"
     ]
-
     multi_link_terms = [
         "లింక్", "క్లిక్ చేయండి", "లింక్ తెరవండి",
         "लिंक", "क्लिक करें", "ссылка", "перейдите по ссылке"
     ]
-
     multi_verify_terms = [
         "ధృవీకరించండి", "నిర్ధారించండి", "వెరిఫై",
         "सत्यापित करें", "पुष्टि करें", "проверьте", "подтвердите"
@@ -336,22 +368,19 @@ def detect_phishing(message):
         contains_any(text, multi_sensitive_terms)
         and contains_any(text, multi_request_terms)
     )
-
     multi_account_threat = (
         contains_any(text, multi_account_terms)
         and contains_any(text, multi_block_terms)
         and contains_any(text, multi_urgent_terms)
     )
-
     multi_payment_scam = (
         contains_any(text, multi_payment_terms)
         and contains_any(text, [
-            "बహుమతి", "బహుమానం", "రివార్డ్", "విడుదల",
+            "బహుమతి", "బహుమానం", "రివార్డ్", "విడుదల",
             "इनाम", "पुरस्कार", "रिवॉर्ड", "जारी",
             "награда", "приз", "вознаграждение", "получить"
         ])
     )
-
     multi_verification_link = (
         contains_any(text, multi_verify_terms)
         and (
@@ -365,35 +394,72 @@ def detect_phishing(message):
         "साझा न करें", "मत भेजें", "कभी न बताएं",
         "не сообщайте", "не отправляйте", "не делитесь"
     ]):
-        reasons.append(
-            "Requests sensitive verification or login information"
-        )
+        reasons.append("Requests sensitive verification or login information")
 
     if multi_account_threat:
-        reasons.append(
-            "Uses an account restriction threat with urgency"
-        )
+        reasons.append("Uses an account restriction threat with urgency")
 
     if multi_payment_scam:
-        reasons.append(
-            "Links a payment request with an unexpected benefit"
-        )
+        reasons.append("Links a payment request with an unexpected benefit")
 
     if multi_verification_link:
-        reasons.append(
-            "Connects account verification with a request for action"
-        )
+        reasons.append("Connects account verification with a request for action")
 
-    # 9. FINAL DECISION
+    # --------------------------------------------------------
+    # 8. CONTEXT-AWARE DECISION
+    # --------------------------------------------------------
+
+    # Protective educational messages should not be flagged
+    # merely because they mention passwords, OTPs or scams.
+    # Do not let an educational introduction automatically hide a real request.
+    # Protective wording suppresses the sensitive-request rule only when the
+    # message is genuinely warning people not to disclose information.
+
+    # Additional context patterns catch common variants that do not use
+    # the exact words "OTP" or "password".
+    extra_account_threat = (
+        matches(r"\b(account|school account|account access)\b", text)
+        and matches(r"\b(close|closed|disappear|lose access|lost access)\b", text)
+        and matches(r"\b(today|tonight|immediately|urgent|act now|respond)\b", text)
+    )
+    extra_sensitive_request = (
+        matches(r"\b(reveal|send|provide|confirm|give|share|demands?|asks?)\b.{0,75}\b(code|digits|details|credentials|identity|password|banking information)\b", text)
+        and matches(r"\b(phone|account|parcel|delivery|caller|stranger|unknown|unexpected|reward|unlock|setup|school|link)\b", text)
+    )
+    extra_reward_scam = (
+        matches(r"\b(pay|fee|payment|transfer|send money|send funds)\b", text)
+        and matches(r"\b(prize|contest|won|reward|gift|refund|parcel|scholarship)\b", text)
+    )
+    if extra_account_threat:
+        reasons.append("Threatens account access to pressure a quick response")
+    if extra_sensitive_request:
+        reasons.append("Requests a code, identity detail or account information")
+    if extra_reward_scam:
+        reasons.append("Connects an unexpected benefit with a payment request")
+
+    # A message with no meaningful warning signs is not flagged.
+    # Two or more independent warning signs increase concern.
     suspicious = (
-        bool(reasons)
-        or (
-            sensitive_request
-            and not protective_context
-        )
+        (sensitive_request and not protective_only)
+        or payment_pressure
+        or credential_or_private_request
+        or money_pressure
+        or risky_app_request
+        or extra_account_threat
+        or extra_sensitive_request
+        or extra_reward_scam
+        or account_threat
+        or verification_request
+        or suspicious_link_context
+        or (impersonation_request and not protective_only)
+        or multi_sensitive_request
+        or multi_account_threat
+        or multi_payment_scam
+        or multi_verification_link
+        or len(reasons) >= 2
     )
 
-    return suspicious, list(dict.fromkeys(reasons))
+    return suspicious, reasons
 
 # ============================================================
 # CYBERBULLYING GUARDIAN
@@ -412,15 +478,15 @@ def detect_bullying(message):
     )
 
     patterns = [
-        (r"\b(stupid|idiot|loser|worthless|ugly|dumb|pathetic)\b",
-         "Contains insulting language"),
+        (r"\b(you are|you're|such a|what a)\s+(stupid|idiot|loser|worthless|ugly|dumb|pathetic)\b",
+         "Contains insulting language directed at someone"),
         (r"\b(nobody likes you|everyone hates you|you have no friends|nobody wants you)\b",
          "Contains hurtful personal remarks"),
         (r"\b(i will hurt you|i will beat you|you will regret this)\b",
          "Contains threatening language"),
         (r"\b(go away|you don't belong here|you should not be here)\b",
          "Contains exclusionary language"),
-        (r"\b(shut up|hate you)\b",
+        (r"\b(i hate you|i hate him|i hate her|you shut up)\b",
          "Contains hostile language"),
         (r"\b(spreading|spread|sharing)\s+(rumours|rumors|false stories)\b",
          "Mentions spreading rumours"),
@@ -441,10 +507,49 @@ def detect_bullying(message):
         (r"\b(turn my friends against me|stop being friends with me)\b",
          "Describes attempts to damage friendships"),
         (r"\b(laugh whenever i speak|laugh at my mistakes|laugh at me)\b",
-         "Describes repeated humiliation")
+         "Describes repeated humiliation"),
+        (r"\b(group chat)\b.{0,65}\b(silent|ignore|exclude|leave me out)\b",
+         "Describes exclusion in a group chat"),
+        (r"\b(keeps|repeatedly|constantly)\b.{0,55}\b(sharing|posting|sending)\b.{0,45}\b(embarrassing|unkind|insulting|cruel)\b",
+         "Describes repeated sharing of hurtful content"),
+        (r"\b(tell|tells|telling|pressure|pressures)\b.{0,45}\b(everyone|others|friends)\b.{0,45}\b(not to|to)\s+(sit|work|talk|include|ignore|avoid)\b",
+         "Describes encouraging others to exclude someone"),
+        (r"\b(keeps|repeatedly|constantly)\b.{0,60}\b(send|sends|sending|post|posts|posting)\b.{0,45}\b(unwanted|insulting|cruel|unkind)\b",
+         "Describes repeated unwanted or insulting messages"),
+        (r"\b(classmates|they|someone)\b.{0,45}\b(laugh|laughs|laughing)\b.{0,45}\b(whenever i speak|at my mistakes|at me)\b",
+         "Describes repeated humiliation"),
+        (r"\b(share|shares|sharing|post|posts|posting)\b.{0,45}\b(embarrassing pictures|embarrassing photos|cruel comments|unkind comments)\b",
+         "May involve sharing embarrassing or hurtful content"),
+        (r"\b(repeatedly|keeps|constantly)\b.{0,45}\b(target|targets|targeting)\b.{0,45}\b(cruel comments|unkind messages|online)\b",
+         "Describes repeated online targeting"),
+        (r"\b(keep telling me|keeps telling me)\b.{0,45}\b(nobody wants me|not wanted|no one wants me)\b",
+         "Contains repeated hurtful personal remarks")
     ]
 
     for pattern, reason in patterns:
+        if matches(pattern, text) and reason not in reasons:
+            reasons.append(reason)
+
+    extra_bullying_patterns = [
+        (r"\b(group chat)\b.{0,65}\b(silent|ignore|exclude)\b.{0,35}\b(join|me|i)\b", "Describes exclusion in a group chat"),
+        (r"\b(someone|they|classmates)\b.{0,70}\b(keeps|repeatedly|constantly)\b.{0,60}\b(sharing|posting|sending)\b.{0,50}\b(embarrassing|unkind|insulting|cruel)\b", "Describes repeated sharing of hurtful content"),
+        (r"\b(tell|tells|telling|pressure|pressures)\b.{0,45}\b(everyone|others|friends)\b.{0,45}\b(not to sit|not to work|ignore|avoid|exclude)\b", "Describes encouraging others to exclude someone"),
+        (r"\b(someone|they|classmate)\b.{0,60}\b(repeatedly|keeps|constantly)\b.{0,60}\b(insulting messages|unkind comments|cruel comments|targeting)\b", "Describes repeated online targeting"),
+        (r"\b(classmates|they|someone)\b.{0,45}\b(laugh|laughs|laughing)\b.{0,45}\b(whenever i speak|at my mistakes|at me)\b", "Describes repeated humiliation"),
+        (r"\b(share|shares|sharing|post|posts|posting)\b.{0,45}\b(embarrassing pictures|embarrassing photos|cruel comments|unkind comments)\b", "May involve sharing embarrassing or hurtful content"),
+        (r"\b(keep telling me|keeps telling me)\b.{0,45}\b(nobody wants me|not wanted|no one wants me)\b", "Contains repeated hurtful personal remarks"),
+        (r"\b(someone|they)\b.{0,55}\b(keeps making|repeatedly makes)\b.{0,45}\b(joke out of my mistakes|jokes about me)\b", "Describes repeated humiliation")
+    ]
+    for pattern, reason in extra_bullying_patterns:
+        if matches(pattern, text) and reason not in reasons:
+            reasons.append(reason)
+
+    targeted_social_patterns = [
+        (r"\b(someone|they|a person)\b.{0,55}\b(encourages|encourage|tells|tell|pressures)\b.{0,55}\b(others|everyone|friends)\b.{0,55}\b(ignore me|not include me|not be included|not sit with me|not work with me)\b", "Describes encouraging others to exclude someone"),
+        (r"\b(my classmates|classmates|they)\b.{0,45}\b(laugh|laughs|laughing)\b.{0,45}\b(whenever i speak|whenever i try to speak|when i speak|at my mistakes)\b", "Describes repeated humiliation"),
+        (r"\b(someone|they)\b.{0,45}\b(keeps|keep|repeatedly)\b.{0,45}\b(making a joke out of my mistakes|joking about my mistakes)\b", "Describes repeated humiliation")
+    ]
+    for pattern, reason in targeted_social_patterns:
         if matches(pattern, text) and reason not in reasons:
             reasons.append(reason)
 
@@ -474,120 +579,96 @@ def detect_bullying(message):
         if contains_any(text, phrases) and reason not in reasons:
             reasons.append(reason)
 
-    if educational_context:
-        return False, []
-
     direct_attack = matches(
-        r"\b(stupid|idiot|loser|worthless|ugly|dumb|pathetic|"
-        r"nobody likes you|everyone hates you|i will hurt you|"
-        r"i will beat you|shut up|hate you)\b",
+        r"\b(you are\s+(?:such an?\s+)?|you're\s+(?:such an?\s+)?|such an?\s+|what an?\s+)(stupid|idiot|loser|worthless|ugly|dumb|pathetic)\b|"
+        r"\b(nobody likes you|everyone hates you|you have no friends|"
+        r"i will hurt you|i will beat you|you will regret this|you shut up|"
+        r"you don't belong here|you should not be here)\b",
         text
     )
+
+    # Educational/reporting sentences can mention hurtful words without
+    # targeting the reader. Keep the warning if the text also describes
+    # ongoing or first-person targeted behaviour.
+    reported_or_educational = educational_context or matches(
+        r"\b(reported|reporting|quoted|quote|character says|word means|"
+        r"definition of|example of)\b", text
+    )
+    ongoing_targeting = matches(
+        r"\b(they|someone|classmates|a classmate)\b.{0,90}\b(me|my|keeps|repeatedly|constantly|every day)\b|"
+        r"\b(keeps|repeatedly|constantly|every day)\b.{0,70}\b(mock|exclude|insult|target|humiliate|threaten)\b",
+        text
+    )
+    if reported_or_educational and not ongoing_targeting and not direct_attack:
+        return False, []
 
     return direct_attack or len(reasons) > 0, reasons
 
 
-
 # ============================================================
-# PRIVACY GUARDIAN - UPGRADED
+# PRIVACY GUARDIAN
 # ============================================================
 
 def detect_privacy(message):
-    text = message.lower()
+    text = message.strip().lower()
     reasons = []
 
+    # A label alone (for example, "my address is") is not treated as
+    # disclosure. The rule looks for a value after the label where possible.
     patterns = [
-        # Exposed passwords and passcodes
-        (r"\b(password|passcode|pin)\s*(is|[:=])\s*\S+",
-         "May contain a password, PIN or passcode"),
-
-        (r"\b(my password is|my passcode is|my pin is)\s+\S+",
-         "May contain a password, PIN or passcode"),
-
-        # Requests for sensitive information
-        (r"\b(send|share|tell|give|provide|reveal|submit|enter)\b.{0,45}\b(my\s+)?(password|passcode|pin|otp|verification code|security code)\b",
-         "Requests sensitive authentication information"),
-
-        (r"\b(can you|could you|please|kindly)\b.{0,35}\b(send|share|tell|give|provide)\b.{0,35}\b(password|passcode|pin|otp|verification code)\b",
-         "Requests sensitive authentication information"),
-
-        (r"\b(password|passcode|pin|otp|verification code)\b.{0,35}\b(send|share|tell|give|provide|reveal)\b",
-         "Requests sensitive authentication information"),
-
-        # OTP exposure
-        (r"\b(otp|verification code|security code)\s*(is|[:=])?\s*\d{4,8}\b",
+        (r"\b(password|passcode)\s*(is|[:=])\s*[^\s,.;]{3,}",
+         "May contain a password or passcode"),
+        (r"\b(otp|verification code)\s*(is|[:=])?\s*\d{4,8}\b",
          "May contain an OTP or verification code"),
-
-        # Phone numbers and identification
-        (r"\b\d{10}\b",
-         "May contain a 10-digit phone number"),
-
-        (r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b",
+        (r"(?<!\d)(?:\+?\d[\s().-]*){10,13}(?!\d)",
+         "May contain a phone number"),
+        (r"\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+\b",
          "Contains an email address"),
-
         (r"\b\d{12}\b",
          "May contain a 12-digit identification number"),
-
-        # Address and school details
-        (r"\b(my address is|i live at|home address is|my home address is)\b",
-         "Mentions a home address"),
-
-        (r"\b(my school is|my school name is|i attend)\b",
-         "Mentions school identity"),
-
-        # Birthday
-        (r"\b(date of birth|my birthday is|born on)\b",
-         "Mentions date of birth"),
-
-        # Banking information
-        (r"\b(bank account number|account number is|card number|cvv)\b",
-         "Mentions banking or card information"),
-
-        # Contact information
-        (r"\b(my phone number is|my mobile number is|contact number is)\b",
-         "Mentions a phone number"),
-
-        (r"\b(my email is|my email address is|contact email is)\b",
-         "Mentions an email address")
+        (r"\b(my address is|i live at|home address is|my home address is)\s+\d{1,5}\s+[\w.-]+(?:\s+[\w.-]+){0,4}",
+         "May contain a home address"),
+        (r"\b(my school is|my school name is|i attend)\s+[a-z][a-z0-9&' -]{2,45}",
+         "May reveal school identity"),
+        (r"\b(my date of birth is|date of birth|my birthday is|born on)\s+\d{1,2}\s+(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4}\b|\b(date of birth|my birthday is|born on)\s+\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b",
+         "May reveal date of birth"),
+        (r"\b(bank account number|account number is|card number)\s*(is|[:=])?\s*\d[\d -]{7,22}\b|\bcvv\s*(is|[:=])\s*\d{3,4}\b",
+         "May contain banking or card information"),
+        (r"\b(my phone number is|my mobile number is|contact number is)\s*(?:\+?\d[\d\s().-]{7,}\d)",
+         "May contain a phone number"),
+        (r"\b(my email is|my email address is|contact email is)\s*[\w.+-]+@[\w-]+(?:\.[\w-]+)+\b",
+         "May contain an email address")
     ]
 
     for pattern, reason in patterns:
         if matches(pattern, text) and reason not in reasons:
             reasons.append(reason)
 
-    # Multilingual privacy detection
+    if matches(r"\b(password|passcode)\s+for\s+(my|this|the)\s+(account|sample account)\s+(is|:|=)\s*[^\s,.;]{3,}", text):
+        reasons.append("May contain a password or passcode")
+    if matches(r"\b(my date of birth is|date of birth)\s+\d{1,2}\s+(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4}\b", text):
+        reasons.append("May reveal date of birth")
+
+    # Multilingual labels are only flagged when accompanied by a plausible
+    # value or a clear disclosure phrase. Numeric/email patterns above also
+    # work with Telugu, Hindi and Russian text.
     multilingual_privacy = [
-        (
-            ["నా పాస్‌వర్డ్", "నా పాస్వర్డ్", "నా ఓటీపీ", "నా రహస్య కోడ్"],
-            "May contain a password or verification code"
-        ),
-        (
-            ["मेरा पासवर्ड", "मेरा ओटीपी", "मेरा सत्यापन कोड"],
-            "May contain a password or verification code"
-        ),
-        (
-            ["мой пароль", "мой одноразовый пароль", "мой код подтверждения"],
-            "May contain a password or verification code"
-        ),
-        (
-            ["నా ఫోన్ నంబర్", "నా మొబైల్ నంబర్", "నా ఇమెయిల్",
-             "నా చిరునామా", "నా పుట్టిన తేదీ"],
-            "May contain personal information"
-        ),
-        (
-            ["मेरा फोन नंबर", "मेरा मोबाइल नंबर", "मेरा ईमेल",
-             "मेरा पता", "मेरी जन्मतिथि"],
-            "May contain personal information"
-        ),
-        (
-            ["мой номер телефона", "моя электронная почта",
-             "мой адрес", "моя дата рождения"],
-            "May contain personal information"
-        )
+        (r"(?:నా పాస్‌వర్డ్|నా పాస్వర్డ్|मेरा पासवर्ड|мой пароль)\s*(?:है|is|:|=)?\s*\S{4,}",
+         "May contain a password or passcode"),
+        (r"(?:నా ఓటీపీ|నా రహస్య కోడ్|मेरा ओटीपी|मेरा सत्यापन कोड|мой одноразовый пароль|мой код подтверждения)\s*(?:है|:|=)?\s*\d{4,8}",
+         "May contain an OTP or verification code"),
+        (r"(?:నా ఫోన్ నంబర్|నా మొబైల్ నంబర్|मेरा फोन नंबर|मेरा मोबाइल नंबर|мой номер телефона)\s*(?:है|:|=)?\s*(?:\+?\d[\d\s-]{7,}\d)",
+         "May contain a phone number"),
+        (r"(?:నా ఇమెయిల్|मेरा ईमेल|моя электронная почта)\s*(?:है|:|=)?\s*[\w.+-]+@[\w-]+(?:\.[\w-]+)+",
+         "May contain an email address"),
+        (r"(?:నా చిరునామా|मेरा पता|мой адрес)\s*(?:है|:|=)?\s*\d{1,5}\s+\S+",
+         "May contain a home address"),
+        (r"(?:నా పుట్టిన తేదీ|मेरी जन्मतिथि|моя дата рождения)\s*(?:है|:|=)?\s*\d{1,2}[/-]\d{1,2}[/-]\d{2,4}",
+         "May reveal date of birth")
     ]
 
-    for phrases, reason in multilingual_privacy:
-        if contains_any(text, phrases) and reason not in reasons:
+    for pattern, reason in multilingual_privacy:
+        if matches(pattern, text) and reason not in reasons:
             reasons.append(reason)
 
     return len(reasons) > 0, reasons
@@ -642,11 +723,19 @@ PRIVACY_TESTS = [
 # ============================================================
 
 def build_challenge(positive, negative):
+    """Build a challenge set from unique supplied examples (no repetition)."""
     cases = []
-    for i in range(50):
-        cases.append((positive[i % len(positive)], True))
-    for i in range(50):
-        cases.append((negative[i % len(negative)], False))
+    seen = set()
+    for message in positive:
+        key = message.strip().casefold()
+        if key and key not in seen:
+            cases.append((message, True))
+            seen.add(key)
+    for message in negative:
+        key = message.strip().casefold()
+        if key and key not in seen:
+            cases.append((message, False))
+            seen.add(key)
     return cases
 
 
@@ -768,7 +857,7 @@ FRESH_PRIVACY = build_challenge(
         "My birthday is 15 August 2012",
         "My account number is 111111111111",
         "The passcode for this sample account is Demo123",
-        "My card number and CVV are confidential",
+        "My card number is 4111 1111 1111 1111 and CVV is 123",
         "My verification code is 123456"
     ],
     [
@@ -1017,14 +1106,49 @@ if (
 ):
     st.session_state.navigation_page = "Dashboard"
 
-page = st.sidebar.radio(
+# Main navigation is displayed across the top of the app.
+st.markdown("""
+<style>
+/* Make the top navigation easy to scan and tap. */
+div[role="radiogroup"] {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    padding: 0.55rem 0.7rem;
+    background: #101F35;
+    border: 1px solid #263B58;
+    border-radius: 12px;
+    margin: 0.25rem 0 1.25rem 0;
+}
+div[role="radiogroup"] label {
+    background: #172A43;
+    border: 1px solid #38516F;
+    border-radius: 9px;
+    padding: 0.45rem 0.85rem;
+    margin: 0 !important;
+}
+div[role="radiogroup"] label:has(input:checked) {
+    background: #1D4ED8;
+    border-color: #60A5FA;
+}
+@media (max-width: 640px) {
+    div[role="radiogroup"] label {
+        padding: 0.4rem 0.55rem;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
+
+page = st.radio(
     "NAVIGATION",
     navigation_options,
-    key="navigation_page"
+    horizontal=True,
+    key="navigation_page",
+    label_visibility="collapsed"
 )
 
-st.sidebar.markdown("---")
-st.sidebar.caption("Student-built educational prototype")
+st.caption("Student-built educational prototype")
 
 
 # ============================================================
@@ -1071,11 +1195,11 @@ if page == "Dashboard":
 
     x.metric("Guardians", "3")
     y.metric("Original Tests", "30")
-    z.metric("Hard Challenge Tests", "300")
-    w.metric("Total Tests", "330")
+    z.metric("Unique Challenge Tests", "120")
+    w.metric("Total Tests", "150")
 
     st.info(
-        "Use the sidebar to explore the three Guardians."
+        "Use the navigation bar above to explore the three Guardians."
     )
 
 
@@ -1134,7 +1258,7 @@ elif page == "Performance Lab" and developer_mode:
 
     st.write(
         "Compare the Guardians using the original demonstration examples "
-        "and the 300-example challenge dataset."
+        "and the 120-example unique challenge dataset."
     )
 
     st.warning(
@@ -1183,7 +1307,7 @@ elif page == "Performance Lab" and developer_mode:
     )
 
     st.markdown("---")
-    st.subheader("300-Example Challenge Performance")
+    st.subheader("Unique Challenge Performance")
 
     challenge_summary, detailed, all_results = get_challenge_results()
 
@@ -1212,7 +1336,7 @@ elif page == "Performance Lab" and developer_mode:
     )
 
     st.caption(
-        "The challenge examples include repeated templates. "
+        "The challenge set contains unique supplied examples. "
         "Results describe performance on this specific test set only."
     )
 
@@ -1226,7 +1350,7 @@ elif page == "Independent Test Lab" and developer_mode:
     st.title("🧪 SchoolShield Hard Challenge Lab")
 
     st.write(
-        "A set of 300 synthetic challenge examples designed "
+        "A set of 120 unique synthetic challenge examples designed "
         "to test detection, missed warnings and false alarms."
     )
 
@@ -1373,7 +1497,7 @@ elif page == "Independent Test Lab" and developer_mode:
 
     for name, metrics, df in detailed:
 
-        with st.expander(name + " — View all 100 tests"):
+        with st.expander(name + " — View all unique tests"):
 
             a, b, c, d = st.columns(4)
 
@@ -1407,13 +1531,18 @@ elif page == "Independent Test Lab" and developer_mode:
     # --------------------------------------------------------
 
     st.markdown("---")
-    st.subheader("Download All 300 Challenge Tests")
+    st.subheader("Download All 120 Unique Challenge Tests")
 
     st.download_button(
         "⬇️ Download Complete Challenge Dataset",
         data=all_results.to_csv(index=False).encode("utf-8"),
-        file_name="schoolshield_300_hard_challenge_tests.csv",
+        file_name="schoolshield_120_unique_challenge_tests.csv",
         mime="text/csv"
+    )
+
+    st.caption(
+        "Each Guardian is evaluated on 40 unique synthetic examples (20 labelled threat and "
+        "20 labelled safe). These are educational test cases, not a real-world accuracy guarantee."
     )
 
     st.info(
