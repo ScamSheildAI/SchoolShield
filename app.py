@@ -127,13 +127,13 @@ def detect_phishing(message):
             r"submit|enter|type|reply with)\b"
             r".{0,60}"
             r"\b(otp|verification code|password|passcode|"
-            r"login details|bank details)\b",
+            r"login details|bank details|pin)\b",
             text
         )
         or
         matches(
             r"\b(otp|verification code|password|passcode|"
-            r"login details|bank details)\b"
+            r"login details|bank details|pin)\b"
             r".{0,60}"
             r"\b(share|send|tell|reveal|provide|give|"
             r"submit|enter|type)\b",
