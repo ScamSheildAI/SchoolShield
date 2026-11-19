@@ -3,6 +3,16 @@ import re
 import hmac
 import streamlit as st
 import pandas as pd
+import json
+
+try:
+    from google import genai
+    from google.genai import types as genai_types
+    GEMINI_SDK_AVAILABLE = True
+except ImportError:
+    genai = None
+    genai_types = None
+    GEMINI_SDK_AVAILABLE = False
 
 st.set_page_config(
     page_title="SchoolShield",
@@ -1003,6 +1013,241 @@ def get_safety_guidance(title, message, reasons):
 
 
 # ============================================================
+# GEMINI AI ANALYSIS
+# ============================================================
+
+GEMINI_MODEL = "gemini-3.8-flash"
+
+
+def get_gemini_api_key():
+    """Read the API key from Streamlit Secrets; never expose it in the UI."""
+    try:
+        return str(st.secrets.get("GEMINI_API_KEY", "")).strip()
+    except Exception:
+        return ""
+
+
+def parse_gemini_json(raw_text):
+    """Parse Gemini's JSON response, tolerating optional code fences."""
+    if not raw_text:
+        raise ValueError("Gemini returned an empty response.")
+    cleaned = raw_text.strip()
+    cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s*```$", "", cleaned)
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", cleaned, re.DOTALL)
+        if not match:
+            raise ValueError("Gemini response was not valid JSON.")
+        return json.loads(match.group(0))
+
+
+def analyse_with_gemini(guardian_name, message="", audio_bytes=None):
+    """
+    Analyse a fictional message with Gemini.
+    If audio is supplied, Gemini also transcribes it and comments on vocal
+    delivery cautiously. It must not claim to know a speaker's true feelings.
+    """
+    api_key = get_gemini_api_key()
+    if not api_key:
+        raise RuntimeError(
+            "Gemini API key is not configured. Add GEMINI_API_KEY in Streamlit Secrets."
+        )
+    if not GEMINI_SDK_AVAILABLE:
+        raise RuntimeError(
+            "The google-genai package is missing. Add google-genai to requirements.txt."
+        )
+
+    client = genai.Client(api_key=api_key)
+
+    guardian_guidance = {
+        "Phishing Guardian": (
+            "Assess possible deception, impersonation, suspicious links, requests "
+            "for credentials or codes, unexpected payments, urgency and pressure. "
+            "Distinguish warnings about scams from actual scam requests."
+        ),
+        "Cyberbullying Guardian": (
+            "Assess whether language targets, threatens, humiliates, excludes or "
+            "repeatedly harms a person. Distinguish a disagreement, quotation, "
+            "educational discussion or report from targeted abuse. Do not label "
+            "a person as a bully based on one ambiguous sentence."
+        ),
+        "Privacy Guardian": (
+            "Assess whether the message exposes or requests personal information, "
+            "such as passwords, OTPs, phone numbers, email addresses, home/school "
+            "details, identity numbers or financial details. Do not repeat any "
+            "sensitive values in your response."
+        ),
+    }
+
+    prompt = f"""
+You are the analysis engine for SchoolShield, a student digital-safety
+educational prototype.
+
+GUARDIAN: {guardian_name}
+TASK: {guardian_guidance.get(guardian_name, "Assess the message for digital safety risks.")}
+
+Analyse the meaning and context, not just individual keywords.
+The input may be a fictional example, a quotation, a lesson, a report, or a real
+attempt to harm. Do not assume intent when context is unclear.
+Do not repeat passwords, OTPs, phone numbers, email addresses, addresses,
+identity numbers or other sensitive values. If present, describe the type only.
+
+For Cyberbullying, do not call ordinary disagreement or a single neutral criticism
+bullying. Look for targeted harmful language, threats, exclusion, humiliation,
+or repeated behaviour where context supports it.
+
+For Phishing, distinguish a warning that says "never share your OTP" from a
+message asking someone to share an OTP.
+
+For Privacy, identify exposed sensitive categories but never reproduce the
+actual values.
+
+Also classify the apparent wording tone as one or more of:
+friendly, neutral, supportive, angry, threatening, pressuring, manipulative,
+or unclear. Tone is an interpretation of the words, not proof of a sender's
+actual emotional state.
+
+If audio is provided, transcribe the spoken message as accurately as possible.
+You may describe vocal delivery as calm, raised, urgent, distressed, or unclear
+only when clearly audible. Do not infer identity, age, personality or true
+emotional state from a voice. If uncertain, say unclear.
+
+Return ONLY valid JSON with exactly these keys:
+{{
+  "transcript": "transcribed words, or empty string when no audio",
+  "verdict": "Suspicious" or "No clear warning signs" or "Uncertain",
+  "risk_level": "High" or "Medium" or "Low" or "Unclear",
+  "explanation": "short explanation in simple student-friendly English",
+  "context": "brief context interpretation",
+  "warning_signs": ["specific warning sign"],
+  "next_steps": ["practical safe next step"],
+  "tone": ["tone label"],
+  "vocal_delivery": "short cautious description, or Not assessed"
+}}
+
+Do not provide a guaranteed safety verdict. When evidence is incomplete, choose
+Uncertain. Keep the explanation concise and suitable for school students.
+"""
+
+    contents = [prompt]
+    if message.strip():
+        contents.append("MESSAGE TEXT:\n" + message.strip())
+    if audio_bytes:
+        contents.append(
+            genai_types.Part.from_bytes(
+                data=audio_bytes,
+                mime_type="audio/wav"
+            )
+        )
+
+    response = client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=contents,
+        config=genai_types.GenerateContentConfig(
+            response_mime_type="application/json",
+            temperature=0.2,
+            max_output_tokens=1200,
+        ),
+    )
+    result = parse_gemini_json(response.text)
+
+    # Normalise and validate model output before rendering it.
+    allowed_verdicts = {
+        "Suspicious", "No clear warning signs", "Uncertain"
+    }
+    if result.get("verdict") not in allowed_verdicts:
+        result["verdict"] = "Uncertain"
+
+    if result.get("risk_level") not in {"High", "Medium", "Low", "Unclear"}:
+        result["risk_level"] = "Unclear"
+
+    for key in ("warning_signs", "next_steps", "tone"):
+        value = result.get(key, [])
+        if not isinstance(value, list):
+            value = [str(value)] if value else []
+        result[key] = [str(item)[:300] for item in value[:8]]
+
+    for key in ("transcript", "explanation", "context", "vocal_delivery"):
+        result[key] = str(result.get(key, ""))[:1200]
+
+    if not result["vocal_delivery"]:
+        result["vocal_delivery"] = "Not assessed"
+
+    return result
+
+
+def show_gemini_result(title, message, detector, label, ai_result):
+    """Combine Gemini context analysis with the existing rule-based safety layer."""
+    rules_detected, rule_reasons = detector(message)
+    ai_suspicious = ai_result["verdict"] == "Suspicious"
+    ai_uncertain = ai_result["verdict"] == "Uncertain"
+
+    st.markdown("---")
+    st.subheader("🧠 Gemini Context Analysis")
+    st.caption(f"Analysis model: {GEMINI_MODEL}")
+
+    if rules_detected or ai_suspicious:
+        st.error(f"⚠️ {label} — warning signs found")
+    elif ai_uncertain:
+        st.warning("Needs a closer look — Gemini is uncertain")
+    else:
+        st.success("No clear warning signs identified")
+
+    c1, c2 = st.columns(2)
+    c1.metric("Risk level", ai_result["risk_level"])
+    c2.metric("Wording tone", ", ".join(ai_result["tone"]) if ai_result["tone"] else "Unclear")
+
+    if ai_result.get("transcript"):
+        st.write("**Voice transcription:**")
+        st.info(ai_result["transcript"])
+
+    st.write("**Gemini's explanation:**")
+    st.write(ai_result["explanation"] or "Gemini did not provide an explanation.")
+
+    if ai_result.get("context"):
+        st.write("**Context understood:**")
+        st.write(ai_result["context"])
+
+    if ai_result["warning_signs"] or rule_reasons:
+        st.write("**Warning signs:**")
+        combined = []
+        for item in ai_result["warning_signs"] + rule_reasons:
+            if item and item not in combined:
+                combined.append(item)
+        for item in combined:
+            st.markdown("- " + item)
+    else:
+        st.write("**Warning signs:** No specific warning signs were identified.")
+
+    if ai_result.get("vocal_delivery") and ai_result["vocal_delivery"] != "Not assessed":
+        st.write("**Vocal delivery (approximate):**")
+        st.write(ai_result["vocal_delivery"])
+        st.caption("This is an AI interpretation of the recording, not proof of the speaker's feelings.")
+
+    st.write("**Suggested next steps:**")
+    steps = ai_result["next_steps"]
+    if not steps:
+        steps, _ = get_safety_guidance(title, message, rule_reasons)
+    for index, step in enumerate(steps[:6], start=1):
+        st.markdown(f"{index}. {step}")
+
+    # Never let an AI "safe" answer override a rule-based warning.
+    if rules_detected and not ai_suspicious:
+        st.warning(
+            "The existing safety rules found a warning sign even though Gemini "
+            "did not classify the message as suspicious. SchoolShield keeps that "
+            "warning visible rather than silently dismissing it."
+        )
+
+    st.info(
+        "SchoolShield is an educational aid, not a guaranteed detector. "
+        "If a message worries you, check with a trusted adult."
+    )
+
+
+# ============================================================
 # GUARDIAN PAGE
 # ============================================================
 
@@ -1014,60 +1259,114 @@ def guardian_page(title, description, detector, samples, label):
     options = ["Choose an example"] + [
         f"Example {i + 1}" for i in range(len(samples))
     ]
-
-    selected = st.selectbox("Try a sample message", options)
+    selected = st.selectbox(
+        "Try a sample message",
+        options,
+        key=title + "_sample"
+    )
     sample = ""
-
     if selected != "Choose an example":
         sample = samples[int(selected.split()[-1]) - 1]
 
+    # Keep the message box in sync when a different sample is selected.
+    message_key = title + "_message"
+    last_sample_key = title + "_last_sample"
+    if st.session_state.get(last_sample_key) != selected:
+        st.session_state[last_sample_key] = selected
+        st.session_state[message_key] = sample
+
     message = st.text_area(
-        "Enter a fictional message:",
-        value=sample,
-        height=130
+        "Enter or review a fictional message:",
+        height=130,
+        key=message_key
     )
 
-    if st.button("Analyse Message", key=title):
-        if not message.strip():
-            st.warning("Please enter a message.")
-        else:
-            detected, reasons = detector(message)
+    st.caption(
+        "Use fictional examples only. Never enter real passwords, OTPs, phone "
+        "numbers, addresses, private conversations or identifying information."
+    )
 
-            if detected:
-                st.error(f"⚠️ {label} detected")
-                st.write("**Warning signs:**")
+    consent = st.checkbox(
+        "I have parent/teacher approval to send fictional text or my own voice "
+        "recording to Google Gemini for analysis. I will not submit real private "
+        "information or another person's voice/message.",
+        value=False,
+        key=title + "_gemini_consent"
+    )
 
-                for reason in reasons:
-                    st.write("- " + reason)
-
-                st.subheader("🧭 What should you do next?")
-                st.write(
-                    "Here are practical next steps based on the warning signs detected. "
-                    "The guidance is rule-based and may not cover every situation."
+    audio_recording = None
+    if consent:
+        with st.expander("🎙️ Optional voice message analysis", expanded=True):
+            st.write(
+                "Record a short fictional example using your own voice. "
+                "Gemini will transcribe it and analyse the spoken message."
+            )
+            if hasattr(st, "audio_input"):
+                audio_recording = st.audio_input(
+                    "Record your fictional voice example",
+                    key=title + "_audio"
                 )
-                guidance, already_acted = get_safety_guidance(
-                    title, message, reasons
-                )
-                for step_number, step in enumerate(guidance, start=1):
-                    st.markdown(f"**{step_number}.** {step}")
-
-                if already_acted:
-                    st.warning("**If you have already interacted with this message:**")
-                    for step in already_acted:
-                        st.markdown(f"- {step}")
-
-                st.info(
-                    "If you are unsure what to do, show the message to a trusted adult. "
-                    "SchoolShield provides educational guidance, not a guaranteed diagnosis."
-                )
+                if audio_recording is not None:
+                    st.audio(audio_recording)
             else:
-                st.success(
-                    "No warning signs detected by the current rules."
+                st.warning(
+                    "Voice recording is unavailable in this Streamlit version. "
+                    "The text analysis feature can still be used."
                 )
-                st.info(
-                    "This does not guarantee that a message is safe. "
-                    "Check the sender and context."
-                )
+    else:
+        st.info(
+            "Gemini analysis and microphone recording stay disabled until the "
+            "approval checkbox is confirmed."
+        )
+
+    if st.button("🧠 Analyse with Gemini", key=title + "_analyse"):
+        if not consent:
+            st.warning("Please confirm the parent/teacher approval and data-sharing notice first.")
+        elif not message.strip() and audio_recording is None:
+            st.warning("Enter a fictional message or record a fictional voice example.")
+        else:
+            audio_bytes = (
+                audio_recording.getvalue()
+                if audio_recording is not None
+                else None
+            )
+            with st.spinner("Gemini is analysing the message context..."):
+                try:
+                    ai_result = analyse_with_gemini(
+                        title,
+                        message=message,
+                        audio_bytes=audio_bytes
+                    )
+                    analysed_message = message.strip()
+                    if not analysed_message and ai_result.get("transcript"):
+                        analysed_message = ai_result["transcript"]
+                    show_gemini_result(
+                        title,
+                        analysed_message,
+                        detector,
+                        label,
+                        ai_result
+                    )
+                except Exception as error:
+                    st.error(
+                        "Gemini analysis could not be completed. Check that "
+                        "GEMINI_API_KEY is saved in Streamlit Secrets, that "
+                        "google-genai is in requirements.txt, and that the "
+                        "selected model is available to your API project. "
+                        "Your API key has not been shown."
+                    )
+                    st.caption(
+                        "Technical error category: " + type(error).__name__ +
+                        ". The rule-based detector is still available as a backup."
+                    )
+                    if message.strip():
+                        detected, reasons = detector(message)
+                        if detected:
+                            st.warning("The existing rules found possible warning signs:")
+                            for reason in reasons:
+                                st.markdown("- " + reason)
+                        else:
+                            st.info("The existing rules found no warning signs in this example.")
 
 
 # ============================================================
@@ -1107,6 +1406,11 @@ if "developer_authenticated" not in st.session_state:
 
 st.sidebar.title("🛡️ SchoolShield")
 st.sidebar.caption("One Platform. Three Layers of Protection.")
+
+if get_gemini_api_key():
+    st.sidebar.caption("🧠 Gemini API key detected in Secrets")
+else:
+    st.sidebar.caption("⚙️ Gemini API key not detected — check Streamlit Secrets")
 
 with st.sidebar.expander("🛠️ Developer Access"):
 
@@ -1234,9 +1538,9 @@ if page == "Dashboard":
     st.subheader("One Platform. Three Layers of Protection.")
 
     st.write(
-        "A student-focused digital safety platform designed to help "
-        "people recognise suspicious messages, harmful language, "
-        "and possible privacy risks."
+        "A student-focused digital safety platform combining Gemini context analysis "
+        "with rule-based safety checks to help recognise suspicious messages, "
+        "harmful language and possible privacy risks."
     )
 
     st.markdown("---")
@@ -1272,7 +1576,8 @@ if page == "Dashboard":
     w.metric("Total Tests", "150")
 
     st.info(
-        "Use the navigation bar above to explore the three Guardians."
+        "Use the navigation bar above to explore the three Guardians. "
+        "Gemini provides context-aware analysis; the original rules remain as a backup."
     )
 
 
@@ -1336,7 +1641,8 @@ elif page == "Performance Lab" and developer_mode:
 
     st.warning(
         "These are synthetic examples, not an independent real-world benchmark. "
-        "SchoolShield currently uses rule-based detection."
+        "These metrics evaluate the existing rule-based detectors only; "
+        "Gemini AI performance is not included in these scores."
     )
 
     st.markdown("---")
@@ -1646,5 +1952,6 @@ st.markdown("---")
 st.caption(
     "SchoolShield | Student-built digital safety prototype. "
     "It may miss threats or flag harmless messages. "
-    "Never enter real passwords, OTPs, phone numbers or private information."
+    "Never enter real passwords, OTPs, phone numbers, private messages or voice recordings. "
+    "Submitted fictional examples are sent to Google Gemini when AI analysis is used."
 )
