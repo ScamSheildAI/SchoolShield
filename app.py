@@ -106,17 +106,19 @@ def detect_phishing(message):
         text
     )
 
-    protective_context = matches(
-        r"\b(never share|do not share|don't share|"
-        r"should not share|should never share|"
-        r"must not share|never reveal|do not reveal|"
-        r"don't reveal|keep your password private|"
-        r"protect your password|protect your account|"
-        r"keep your details private|"
-        r"should be kept secret)\b",
-        text
-    )
-
+  protective_context = matches(
+    r"\b(never share|do not share|don't share|"
+    r"should not share|should never share|"
+    r"must not share|never reveal|do not reveal|"
+    r"don't reveal|never tell anyone|do not tell anyone|"
+    r"don't tell anyone|should not tell anyone|"
+    r"never give anyone|do not give anyone|"
+    r"don't give anyone|keep your password private|"
+    r"protect your password|protect your account|"
+    r"keep your details private|"
+    r"should be kept secret)\b",
+    text
+)
     # --------------------------------------------------------
     # 2. DIRECT SENSITIVE INFORMATION REQUESTS
     # --------------------------------------------------------
