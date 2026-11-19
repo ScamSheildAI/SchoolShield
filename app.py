@@ -82,19 +82,11 @@ def contains_any(text, phrases):
     return any(phrase.casefold() in lowered for phrase in phrases)
 
 
-# ============================================================
-# PHISHING GUARDIAN
-# ============================================================
-
-
 def detect_phishing(message):
     text = message.lower()
     reasons = []
 
-    # --------------------------------------------------------
     # 1. CONTEXT DETECTION
-    # --------------------------------------------------------
-
     educational_context = matches(
         r"\b(our lesson|computer lesson|teacher explained|"
         r"teacher taught|class discussed|we discussed|"
@@ -106,23 +98,21 @@ def detect_phishing(message):
         text
     )
 
-  protective_context = matches(
-    r"\b(never share|do not share|don't share|"
-    r"should not share|should never share|"
-    r"must not share|never reveal|do not reveal|"
-    r"don't reveal|never tell anyone|do not tell anyone|"
-    r"don't tell anyone|should not tell anyone|"
-    r"never give anyone|do not give anyone|"
-    r"don't give anyone|keep your password private|"
-    r"protect your password|protect your account|"
-    r"keep your details private|"
-    r"should be kept secret)\b",
-    text
-)
-    # --------------------------------------------------------
-    # 2. DIRECT SENSITIVE INFORMATION REQUESTS
-    # --------------------------------------------------------
+    protective_context = matches(
+        r"\b(never share|do not share|don't share|"
+        r"should not share|should never share|"
+        r"must not share|never reveal|do not reveal|"
+        r"don't reveal|never tell anyone|do not tell anyone|"
+        r"don't tell anyone|should not tell anyone|"
+        r"never give anyone|do not give anyone|"
+        r"don't give anyone|keep your password private|"
+        r"protect your password|protect your account|"
+        r"keep your details private|"
+        r"should be kept secret)\b",
+        text
+    )
 
+    # 2. DIRECT SENSITIVE INFORMATION REQUESTS
     sensitive_request = (
         matches(
             r"\b(share|send|tell|reveal|provide|give|"
@@ -132,8 +122,7 @@ def detect_phishing(message):
             r"login details|bank details|pin)\b",
             text
         )
-        or
-        matches(
+        or matches(
             r"\b(otp|verification code|password|passcode|"
             r"login details|bank details|pin)\b"
             r".{0,60}"
@@ -143,22 +132,56 @@ def detect_phishing(message):
         )
     )
 
-    if sensitive_request and not protective_context:
-        reasons.append(
-            "Requests sensitive verification or login information"
+    # Check each sentence separately so a warning in one
+    # sentence does not hide a real request in another.
+    sentences = re.split(r"[.!?\n]+", text)
+    for sentence in sentences:
+        sentence_request = (
+            matches(
+                r"\b(share|send|tell|reveal|provide|give|"
+                r"submit|enter|type|reply with)\b"
+                r".{0,60}"
+                r"\b(otp|verification code|password|passcode|"
+                r"login details|bank details|pin)\b",
+                sentence
+            )
+            or matches(
+                r"\b(otp|verification code|password|passcode|"
+                r"login details|bank details|pin)\b"
+                r".{0,60}"
+                r"\b(share|send|tell|reveal|provide|give|"
+                r"submit|enter|type)\b",
+                sentence
+            )
         )
 
-    # --------------------------------------------------------
-    # 3. PAYMENT SCAMS
-    # --------------------------------------------------------
+        sentence_protective = matches(
+            r"\b(never share|do not share|don't share|"
+            r"should not share|should never share|"
+            r"must not share|never reveal|do not reveal|"
+            r"don't reveal|never tell anyone|do not tell anyone|"
+            r"don't tell anyone|should not tell anyone|"
+            r"never give anyone|do not give anyone|"
+            r"don't give anyone|keep your password private|"
+            r"protect your password|protect your account|"
+            r"keep your details private|"
+            r"should be kept secret)\b",
+            sentence
+        )
 
+        if sentence_request and not sentence_protective:
+            reasons.append(
+                "Requests sensitive verification or login information"
+            )
+            break
+
+    # 3. PAYMENT SCAMS
     payment_pressure = (
         matches(
             r"\b(pay|payment|fee|charge|transfer|send money)\b",
             text
         )
-        and
-        matches(
+        and matches(
             r"\b(prize|reward|parcel|scholarship|refund|"
             r"lottery|unlock|release|claim|gift)\b",
             text
@@ -170,23 +193,18 @@ def detect_phishing(message):
             "Links a payment request with an unexpected benefit"
         )
 
-    # --------------------------------------------------------
     # 4. ACCOUNT THREATS
-    # --------------------------------------------------------
-
     account_threat = (
         matches(
             r"\b(account|school account|profile|access)\b",
             text
         )
-        and
-        matches(
+        and matches(
             r"\b(blocked|suspended|closed|locked|disabled|"
             r"deactivated|termination)\b",
             text
         )
-        and
-        matches(
+        and matches(
             r"\b(urgent|immediately|today|act now|"
             r"within 24 hours|right away|before tonight)\b",
             text
@@ -198,23 +216,18 @@ def detect_phishing(message):
             "Uses an account restriction threat with urgency"
         )
 
-    # --------------------------------------------------------
     # 5. DECEPTIVE VERIFICATION
-    # --------------------------------------------------------
-
     verification_request = (
         matches(
             r"\b(account|school account|profile|login|access)\b",
             text
         )
-        and
-        matches(
+        and matches(
             r"\b(verify|verification|confirm|restore|"
             r"recover|unlock|reactivate)\b",
             text
         )
-        and
-        matches(
+        and matches(
             r"\b(link|website|page|details|information|"
             r"identity|password|otp)\b|https?://|www\.",
             text
@@ -226,10 +239,7 @@ def detect_phishing(message):
             "Connects account verification with a request for action"
         )
 
-    # --------------------------------------------------------
     # 6. SUSPICIOUS LINKS
-    # --------------------------------------------------------
-
     link_action = (
         matches(
             r"\b(click|tap|open|visit)\b.{0,50}"
@@ -254,24 +264,19 @@ def detect_phishing(message):
             "Contains a link connected with suspicious activity"
         )
 
-    # --------------------------------------------------------
     # 7. ORGANISATION IMPERSONATION
-    # --------------------------------------------------------
-
     impersonation_request = (
         matches(
             r"\b(bank|delivery|parcel|school account|"
             r"support team|security team|administrator)\b",
             text
         )
-        and
-        matches(
+        and matches(
             r"\b(demand|demands|asking|asks|request|"
             r"requests|send|provide|reveal|confirm)\b",
             text
         )
-        and
-        matches(
+        and matches(
             r"\b(password|otp|verification code|"
             r"bank details|login details|payment)\b",
             text
@@ -283,43 +288,45 @@ def detect_phishing(message):
             "Uses an organisation identity to request sensitive information"
         )
 
-    # --------------------------------------------------------
-    # 8. TELUGU, HINDI AND RUSSIAN PHISHING PATTERNS
-    # --------------------------------------------------------
-    # The interface and all explanations remain in English.
-    # These are phrase-based rules, not full translation or AI understanding.
-
+    # 8. MULTILINGUAL PATTERNS
     multi_sensitive_terms = [
         "ఓటీపీ", "otp", "పాస్‌వర్డ్", "పాస్వర్డ్", "రహస్య కోడ్",
         "ओटीपी", "पासवर्ड", "सत्यापन कोड", "गुप्त कोड",
         "одноразовый пароль", "пароль", "код подтверждения"
     ]
+
     multi_request_terms = [
         "పంపండి", "చెప్పండి", "పంచుకోండి", "నమోదు చేయండి", "ఇవ్వండి",
         "भेजें", "बताएं", "साझा करें", "दर्ज करें", "दीजिए",
         "отправьте", "сообщите", "поделитесь", "введите", "предоставьте"
     ]
+
     multi_urgent_terms = [
         "వెంటనే", "తక్షణమే", "ఈరోజే", "ఇప్పుడే",
         "तुरंत", "अभी", "आज ही", "शीघ्र",
         "срочно", "немедленно", "сегодня", "прямо сейчас"
     ]
+
     multi_account_terms = [
         "ఖాతా", "అకౌంట్", "खाता", "аккаунт", "учётная запись"
     ]
+
     multi_block_terms = [
         "బ్లాక్", "నిలిపివేయబడుతుంది", "మూసివేయబడుతుంది",
         "बंद", "ब्लॉक", "निलंबित", "заблокирован", "закрыт", "приостановлен"
     ]
+
     multi_payment_terms = [
         "చెల్లింపు", "డబ్బు పంపండి", "ఫీజు", "బహుమతి",
         "भुगतान", "पैसे भेजें", "शुल्क", "इनाम",
         "оплата", "переведите деньги", "платёж", "награда", "приз"
     ]
+
     multi_link_terms = [
         "లింక్", "క్లిక్ చేయండి", "లింక్ తెరవండి",
         "लिंक", "क्लिक करें", "ссылка", "перейдите по ссылке"
     ]
+
     multi_verify_terms = [
         "ధృవీకరించండి", "నిర్ధారించండి", "వెరిఫై",
         "सत्यापित करें", "पुष्टि करें", "проверьте", "подтвердите"
@@ -329,19 +336,22 @@ def detect_phishing(message):
         contains_any(text, multi_sensitive_terms)
         and contains_any(text, multi_request_terms)
     )
+
     multi_account_threat = (
         contains_any(text, multi_account_terms)
         and contains_any(text, multi_block_terms)
         and contains_any(text, multi_urgent_terms)
     )
+
     multi_payment_scam = (
         contains_any(text, multi_payment_terms)
         and contains_any(text, [
-            "బహుమతి", "బహుమానం", "రివార్డ్", "విడుదల",
+            "बహుమతి", "బహుమానం", "రివార్డ్", "విడుదల",
             "इनाम", "पुरस्कार", "रिवॉर्ड", "जारी",
             "награда", "приз", "вознаграждение", "получить"
         ])
     )
+
     multi_verification_link = (
         contains_any(text, multi_verify_terms)
         and (
@@ -355,45 +365,35 @@ def detect_phishing(message):
         "साझा न करें", "मत भेजें", "कभी न बताएं",
         "не сообщайте", "не отправляйте", "не делитесь"
     ]):
-        reasons.append("Requests sensitive verification or login information")
+        reasons.append(
+            "Requests sensitive verification or login information"
+        )
 
     if multi_account_threat:
-        reasons.append("Uses an account restriction threat with urgency")
+        reasons.append(
+            "Uses an account restriction threat with urgency"
+        )
 
     if multi_payment_scam:
-        reasons.append("Links a payment request with an unexpected benefit")
+        reasons.append(
+            "Links a payment request with an unexpected benefit"
+        )
 
     if multi_verification_link:
-        reasons.append("Connects account verification with a request for action")
+        reasons.append(
+            "Connects account verification with a request for action"
+        )
 
-    # --------------------------------------------------------
-    # 8. CONTEXT-AWARE DECISION
-    # --------------------------------------------------------
-
-    # Protective educational messages should not be flagged
-    # merely because they mention passwords, OTPs or scams.
-    if educational_context and protective_context and not (
-        sensitive_request and not protective_context
-    ):
-        return False, []
-
-    # A message with no meaningful warning signs is not flagged.
-    # Two or more independent warning signs increase concern.
+    # 9. FINAL DECISION
     suspicious = (
-        sensitive_request
-        or payment_pressure
-        or account_threat
-        or verification_request
-        or suspicious_link_context
-        or impersonation_request
-        or multi_sensitive_request
-        or multi_account_threat
-        or multi_payment_scam
-        or multi_verification_link
-        or len(reasons) >= 2
+        bool(reasons)
+        or (
+            sensitive_request
+            and not protective_context
+        )
     )
 
-    return suspicious, reasons
+    return suspicious, list(dict.fromkeys(reasons))
 
 # ============================================================
 # CYBERBULLYING GUARDIAN
