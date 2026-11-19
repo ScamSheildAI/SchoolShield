@@ -1534,7 +1534,7 @@ if page == "Dashboard":
 # ============================================================
 # PHISHING GUARDIAN PAGE
 # ============================================================
-st.write("PHISHING PAGE UPDATED")
+
 
 elif page == "Phishing Guardian":
 
