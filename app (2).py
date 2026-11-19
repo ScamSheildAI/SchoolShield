@@ -1308,7 +1308,7 @@ def guardian_page(title, description, detector, samples, label):
                 st.markdown("**Warning signs:**")
                 for reason in reasons:
                     st.markdown("- " + reason)
-
+ 
                 st.info(
                     "Do not share private information. "
                     "Ask a trusted adult for help when needed."
@@ -1534,6 +1534,7 @@ if page == "Dashboard":
 # ============================================================
 # PHISHING GUARDIAN PAGE
 # ============================================================
+st.write("PHISHING PAGE UPDATED")
 
 elif page == "Phishing Guardian":
 
