@@ -1264,6 +1264,7 @@ def guardian_page(title, description, detector, samples, label):
     sample = ""
     if selected != "Choose an example":
         sample = samples[int(selected.split()[-1]) - 1]
+        st.write("VOICE SECTION LOADED")
 
     voice_consent = st.checkbox(
         "I agree to send my voice to Google for transcription. I will use fictional examples and my own voice.",
