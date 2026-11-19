@@ -485,8 +485,9 @@ def detect_bullying(message):
     return direct_attack or len(reasons) > 0, reasons
 
 
+
 # ============================================================
-# PRIVACY GUARDIAN
+# PRIVACY GUARDIAN - UPGRADED
 # ============================================================
 
 def detect_privacy(message):
@@ -494,28 +495,56 @@ def detect_privacy(message):
     reasons = []
 
     patterns = [
-        (r"\b(password|passcode)\s*(is|[:=])\s*\S+",
-         "May contain a password or passcode"),
-        (r"\b(my password is|my passcode is)\s+\S+",
-         "May contain a password or passcode"),
-        (r"\b(otp|verification code)\s*(is|[:=])?\s*\d{4,8}\b",
+        # Exposed passwords and passcodes
+        (r"\b(password|passcode|pin)\s*(is|[:=])\s*\S+",
+         "May contain a password, PIN or passcode"),
+
+        (r"\b(my password is|my passcode is|my pin is)\s+\S+",
+         "May contain a password, PIN or passcode"),
+
+        # Requests for sensitive information
+        (r"\b(send|share|tell|give|provide|reveal|submit|enter)\b.{0,45}\b(my\s+)?(password|passcode|pin|otp|verification code|security code)\b",
+         "Requests sensitive authentication information"),
+
+        (r"\b(can you|could you|please|kindly)\b.{0,35}\b(send|share|tell|give|provide)\b.{0,35}\b(password|passcode|pin|otp|verification code)\b",
+         "Requests sensitive authentication information"),
+
+        (r"\b(password|passcode|pin|otp|verification code)\b.{0,35}\b(send|share|tell|give|provide|reveal)\b",
+         "Requests sensitive authentication information"),
+
+        # OTP exposure
+        (r"\b(otp|verification code|security code)\s*(is|[:=])?\s*\d{4,8}\b",
          "May contain an OTP or verification code"),
+
+        # Phone numbers and identification
         (r"\b\d{10}\b",
          "May contain a 10-digit phone number"),
+
         (r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b",
          "Contains an email address"),
+
         (r"\b\d{12}\b",
          "May contain a 12-digit identification number"),
+
+        # Address and school details
         (r"\b(my address is|i live at|home address is|my home address is)\b",
          "Mentions a home address"),
+
         (r"\b(my school is|my school name is|i attend)\b",
          "Mentions school identity"),
+
+        # Birthday
         (r"\b(date of birth|my birthday is|born on)\b",
          "Mentions date of birth"),
+
+        # Banking information
         (r"\b(bank account number|account number is|card number|cvv)\b",
          "Mentions banking or card information"),
+
+        # Contact information
         (r"\b(my phone number is|my mobile number is|contact number is)\b",
          "Mentions a phone number"),
+
         (r"\b(my email is|my email address is|contact email is)\b",
          "Mentions an email address")
     ]
@@ -524,24 +553,35 @@ def detect_privacy(message):
         if matches(pattern, text) and reason not in reasons:
             reasons.append(reason)
 
-    # Multilingual labels for personal information. Numeric patterns above
-    # continue to work across scripts when users type digits.
+    # Multilingual privacy detection
     multilingual_privacy = [
-        (["నా పాస్‌వర్డ్", "నా పాస్వర్డ్", "నా ఓటీపీ", "నా రహస్య కోడ్"],
-         "May contain a password or verification code"),
-        (["मेरा पासवर्ड", "मेरा ओटीपी", "मेरा सत्यापन कोड"],
-         "May contain a password or verification code"),
-        (["мой пароль", "мой одноразовый пароль", "мой код подтверждения"],
-         "May contain a password or verification code"),
-        (["నా ఫోన్ నంబర్", "నా మొబైల్ నంబర్", "నా ఇమెయిల్",
-          "నా చిరునామా", "నా పుట్టిన తేదీ"],
-         "May contain personal information"),
-        (["मेरा फोन नंबर", "मेरा मोबाइल नंबर", "मेरा ईमेल",
-          "मेरा पता", "मेरी जन्मतिथि"],
-         "May contain personal information"),
-        (["мой номер телефона", "моя электронная почта",
-          "мой адрес", "моя дата рождения"],
-         "May contain personal information")
+        (
+            ["నా పాస్‌వర్డ్", "నా పాస్వర్డ్", "నా ఓటీపీ", "నా రహస్య కోడ్"],
+            "May contain a password or verification code"
+        ),
+        (
+            ["मेरा पासवर्ड", "मेरा ओटीपी", "मेरा सत्यापन कोड"],
+            "May contain a password or verification code"
+        ),
+        (
+            ["мой пароль", "мой одноразовый пароль", "мой код подтверждения"],
+            "May contain a password or verification code"
+        ),
+        (
+            ["నా ఫోన్ నంబర్", "నా మొబైల్ నంబర్", "నా ఇమెయిల్",
+             "నా చిరునామా", "నా పుట్టిన తేదీ"],
+            "May contain personal information"
+        ),
+        (
+            ["मेरा फोन नंबर", "मेरा मोबाइल नंबर", "मेरा ईमेल",
+             "मेरा पता", "मेरी जन्मतिथि"],
+            "May contain personal information"
+        ),
+        (
+            ["мой номер телефона", "моя электронная почта",
+             "мой адрес", "моя дата рождения"],
+            "May contain personal information"
+        )
     ]
 
     for phrases, reason in multilingual_privacy:
