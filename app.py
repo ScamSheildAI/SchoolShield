@@ -946,6 +946,63 @@ def evaluate_guardian(test_data, detector, guardian):
 
 
 # ============================================================
+# SAFETY RESPONSE GUIDANCE
+# ============================================================
+
+def get_safety_guidance(title, message, reasons):
+    """Return practical next steps based on the Guardian that flagged the message.
+
+    This is a transparent rule-based guidance feature, not a generative AI model
+    and not a substitute for help from a trusted adult or official provider.
+    """
+    text = message.casefold()
+    guidance = []
+    already_acted = []
+
+    if "Phishing" in title:
+        guidance = [
+            "Do not reply, click links, open attachments, or download anything from the message.",
+            "Do not share an OTP, password, PIN, verification code, or banking information.",
+            "Check the claim independently using the organisation's official app, website, or a contact number you already trust.",
+            "Block and report the sender using the messaging app or email service's built-in tools."
+        ]
+        if re.search(r"\b(otp|verification code|password|passcode|pin|bank|card|payment|transfer|money)\b", text):
+            already_acted.append(
+                "If you already shared a code, password, PIN, or payment details, tell a trusted adult immediately. Contact the bank or service through its official app or website, change affected credentials, and ask them to secure the account."
+            )
+        if re.search(r"https?://|www\.", text):
+            already_acted.append(
+                "If you already opened a link, close the page. Do not enter any more information or install anything it offers. Ask a trusted adult to help check the device and account."
+            )
+
+    elif "Cyberbullying" in title:
+        guidance = [
+            "Do not respond with insults or threats; step away from the conversation if you can.",
+            "Save a record of the messages or posts if it is safe to do so. Do not forward or repost hurtful content.",
+            "Use the platform's block and report features, and adjust who can contact or tag you.",
+            "Talk to a trusted adult, parent, teacher, or school counsellor. You do not have to handle it alone."
+        ]
+        if re.search(r"\b(threat|hurt|beat|attack|danger|blackmail)\b", text):
+            already_acted.append(
+                "If someone may hurt you or you feel in immediate danger, move to a safe place and tell a trusted adult or local emergency service right away."
+            )
+
+    else:  # Privacy Guardian
+        guidance = [
+            "Avoid posting or sending personal details such as your address, phone number, school details, passwords, or verification codes.",
+            "Delete or remove the exposed information where possible, and ask the platform to remove copies if needed.",
+            "Review account privacy settings and limit who can view your profile or contact you.",
+            "Tell a trusted adult so they can help you decide whether any accounts or services need securing."
+        ]
+        if re.search(r"\b(password|passcode|otp|verification code|pin|bank|card)\b", text):
+            already_acted.append(
+                "If a password or code was exposed, change the affected password using the official app or website, enable two-step verification where available, and contact the bank or service if financial details were involved."
+            )
+
+    return guidance, already_acted
+
+
+# ============================================================
 # GUARDIAN PAGE
 # ============================================================
 
@@ -983,9 +1040,25 @@ def guardian_page(title, description, detector, samples, label):
                 for reason in reasons:
                     st.write("- " + reason)
 
+                st.subheader("🧭 What should you do next?")
+                st.write(
+                    "Here are practical next steps based on the warning signs detected. "
+                    "The guidance is rule-based and may not cover every situation."
+                )
+                guidance, already_acted = get_safety_guidance(
+                    title, message, reasons
+                )
+                for step_number, step in enumerate(guidance, start=1):
+                    st.markdown(f"**{step_number}.** {step}")
+
+                if already_acted:
+                    st.warning("**If you have already interacted with this message:**")
+                    for step in already_acted:
+                        st.markdown(f"- {step}")
+
                 st.info(
-                    "Do not share private information. "
-                    "Ask a trusted adult for help when needed."
+                    "If you are unsure what to do, show the message to a trusted adult. "
+                    "SchoolShield provides educational guidance, not a guaranteed diagnosis."
                 )
             else:
                 st.success(
