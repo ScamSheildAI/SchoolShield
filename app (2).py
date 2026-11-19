@@ -4,7 +4,7 @@ import hmac
 import streamlit as st
 import pandas as pd
 import json
-
+from streamlit_mic_recorder import speech_to_text
 try:
     from google import genai
     from google.genai import types as genai_types
@@ -1260,10 +1260,10 @@ def guardian_page(title, description, detector, samples, label):
         f"Example {i + 1}" for i in range(len(samples))
     ]
     selected = st.selectbox("Try a sample message", options, key=title + "_sample")
+
     sample = ""
     if selected != "Choose an example":
         sample = samples[int(selected.split()[-1]) - 1]
-            from streamlit_mic_recorder import speech_to_text
 
     voice_consent = st.checkbox(
         "I agree to send my voice to Google for transcription. I will use fictional examples and my own voice.",
@@ -1296,8 +1296,7 @@ def guardian_page(title, description, detector, samples, label):
         "contact details, private conversations or identifying information."
     )
 
-    
-        if st.button("🔍 Analyse Message", key=title + "_analyse"):
+    if st.button("🔍 Analyse Message", key=title + "_analyse"):
         if not message.strip():
             st.warning("Please enter or record a fictional message.")
         else:
