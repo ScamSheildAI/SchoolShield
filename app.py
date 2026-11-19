@@ -1259,77 +1259,60 @@ def guardian_page(title, description, detector, samples, label):
     options = ["Choose an example"] + [
         f"Example {i + 1}" for i in range(len(samples))
     ]
-    selected = st.selectbox(
-        "Try a sample message",
-        options,
-        key=title + "_sample"
-    )
+    selected = st.selectbox("Try a sample message", options, key=title + "_sample")
     sample = ""
     if selected != "Choose an example":
         sample = samples[int(selected.split()[-1]) - 1]
 
-    # Keep the message box in sync when a different sample is selected.
-    message_key = title + "_message"
-    last_sample_key = title + "_last_sample"
-    if st.session_state.get(last_sample_key) != selected:
-        st.session_state[last_sample_key] = selected
-        st.session_state[message_key] = sample
-
     message = st.text_area(
-        "Enter or review a fictional message:",
+        "Enter a fictional message:",
+        value=sample,
         height=130,
-        key=message_key
+        key=title + "_message"
     )
 
     st.caption(
-        "Use fictional examples only. Never enter real passwords, OTPs, phone "
-        "numbers, addresses, private conversations or identifying information."
+        "Use fictional examples only. Do not enter real passwords, OTPs, "
+        "contact details, private conversations or identifying information."
     )
 
     consent = st.checkbox(
-        "I have parent/teacher approval to send fictional text or my own voice "
-        "recording to Google Gemini for analysis. I will not submit real private "
-        "information or another person's voice/message.",
+        "I understand that the fictional text or recording I submit will be sent "
+        "to Google Gemini for analysis. I will not submit real private information "
+        "or another person's private voice/message.",
         value=False,
         key=title + "_gemini_consent"
     )
 
     audio_recording = None
     if consent:
-        with st.expander("🎙️ Optional voice message analysis", expanded=True):
+        with st.expander("🎙️ Optional voice message analysis"):
             st.write(
-                "Record a short fictional example using your own voice. "
-                "Gemini will transcribe it and analyse the spoken message."
+                "Record a short fictional example using your own voice. Gemini can "
+                "transcribe it and comment cautiously on the wording and audible delivery."
             )
             if hasattr(st, "audio_input"):
                 audio_recording = st.audio_input(
-                    "Record your fictional voice example",
+                    "Record a fictional voice example",
                     key=title + "_audio"
                 )
                 if audio_recording is not None:
                     st.audio(audio_recording)
             else:
-                st.warning(
-                    "Voice recording is unavailable in this Streamlit version. "
-                    "The text analysis feature can still be used."
+                st.info(
+                    "Voice recording requires a newer Streamlit version. "
+                    "Update requirements.txt to streamlit>=1.40.0."
                 )
     else:
-        st.info(
-            "Gemini analysis and microphone recording stay disabled until the "
-            "approval checkbox is confirmed."
-        )
+        st.info("Confirm the data-sharing notice above to enable Gemini analysis and microphone recording.")
 
     if st.button("🧠 Analyse with Gemini", key=title + "_analyse"):
-        if not consent:
-            st.warning("Please confirm the parent/teacher approval and data-sharing notice first.")
-        elif not message.strip() and audio_recording is None:
+        if not message.strip() and audio_recording is None:
             st.warning("Enter a fictional message or record a fictional voice example.")
+        elif not consent:
+            st.warning("Please confirm the data-sharing notice before using Gemini.")
         else:
-            audio_bytes = (
-                audio_recording.getvalue()
-                if audio_recording is not None
-                else None
-            )
+            audio_bytes = audio_recording.getvalue() if audio_recording is not None else None
             with st.spinner("Gemini is analysing the message context..."):
                 try:
                     ai_result = analyse_with_gemini(
@@ -1351,14 +1334,21 @@ def guardian_page(title, description, detector, samples, label):
                     st.error(
                         "Gemini analysis could not be completed. Check that "
                         "GEMINI_API_KEY is saved in Streamlit Secrets, that "
-                        "google-genai is in requirements.txt, and that the "
-                        "selected model is available to your API project. "
-                        "Your API key has not been shown."
+                        "google-genai is in requirements.txt, and that the API "
+                        "quota/model is available. Your API key has not been shown."
                     )
-                    st.caption(
-                        "Technical error category: " + type(error).__name__ +
-                        ". The rule-based detector is still available as a backup."
+                    # Show a useful diagnostic without exposing API credentials.
+                    safe_detail = str(error).strip() or "No additional error details were provided."
+                    safe_detail = re.sub(r"AIza[0-9A-Za-z_-]{20,}", "[API KEY HIDDEN]", safe_detail)
+                    safe_detail = re.sub(
+                        r"(?i)(api[_ -]?key\s*[:=]\s*)[^\s,;]+",
+                        r"\1[HIDDEN]",
+                        safe_detail,
                     )
+                    with st.expander("Technical details (API key hidden)"):
+                        st.caption("Error type: " + type(error).__name__)
+                        st.code(safe_detail[:1200])
+                        st.caption("The rule-based detector is still available as a backup.")
                     if message.strip():
                         detected, reasons = detector(message)
                         if detected:
