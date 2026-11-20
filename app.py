@@ -974,7 +974,8 @@ def get_safety_guidance(title, message, reasons):
             "Do not reply, click links, open attachments, or download anything from the message.",
             "Do not share an OTP, password, PIN, verification code, or banking information.",
             "Check the claim independently using the organisation's official app, website, or a contact number you already trust.",
-            "Block and report the sender using the messaging app or email service's built-in tools."
+            "Block and report the sender using the messaging app or email service's built-in tools.",
+            "If you are unsure or worried, show the message to a trusted adult."
         ]
         if re.search(r"\b(otp|verification code|password|passcode|pin|bank|card|payment|transfer|money)\b", text):
             already_acted.append(
