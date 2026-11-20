@@ -1305,8 +1305,20 @@ def guardian_page(title, description, detector, samples, label):
                 )
     else:
         st.info("Confirm the data-sharing notice above to enable Gemini analysis and microphone recording.")
+    if st.button("⚡ Analyse instantly", key=title + "_instant"):
+        if not message.strip():
+            st.warning("Enter a fictional message or use voice transcription first.")
+        else:
+            detected, reasons = detector(message.strip())
+            st.markdown("### ⚡ Instant rule-based result")
+            if detected:
+                st.warning("Possible warning signs detected:")
+                for reason in reasons:
+                    st.markdown("- " + reason)
+            else:
+                st.info("The existing rules found no warning signs in this example.")
 
-    if st.button("🧠 Analyse with Gemini", key=title + "_analyse"):
+    if st.button("🧠 Add Gemini explanation", key=title + "_analyse"):
         if not message.strip() and audio_recording is None:
             st.warning("Enter a fictional message or record a fictional voice example.")
         elif not consent:
@@ -1332,12 +1344,10 @@ def guardian_page(title, description, detector, samples, label):
                     )
                 except Exception as error:
                     st.error(
-                        "Gemini analysis could not be completed. Check that "
-                        "GEMINI_API_KEY is saved in Streamlit Secrets, that "
-                        "google-genai is in requirements.txt, and that the API "
-                        "quota/model is available. Your API key has not been shown."
+                        "Gemini explanation is unavailable right now. "
+                        "Your instant rule-based result is separate and can "
+                        "still be used."
                     )
-                    # Show a useful diagnostic without exposing API credentials.
                     safe_detail = str(error).strip() or "No additional error details were provided."
                     safe_detail = re.sub(r"AIza[0-9A-Za-z_-]{20,}", "[API KEY HIDDEN]", safe_detail)
                     safe_detail = re.sub(
@@ -1348,15 +1358,6 @@ def guardian_page(title, description, detector, samples, label):
                     with st.expander("Technical details (API key hidden)"):
                         st.caption("Error type: " + type(error).__name__)
                         st.code(safe_detail[:1200])
-                        st.caption("The rule-based detector is still available as a backup.")
-                    if message.strip():
-                        detected, reasons = detector(message)
-                        if detected:
-                            st.warning("The existing rules found possible warning signs:")
-                            for reason in reasons:
-                                st.markdown("- " + reason)
-                        else:
-                            st.info("The existing rules found no warning signs in this example.")
 
 
 # ============================================================
