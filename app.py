@@ -1316,6 +1316,18 @@ def guardian_page(title, description, detector, samples, label):
                 st.warning("Possible warning signs detected:")
                 for reason in reasons:
                     st.markdown("- " + reason)
+                    guidance, already_acted = get_safety_guidance(
+                    title, message.strip(), reasons
+)
+
+                    st.markdown("**What you can do next:**")
+                 for step in guidance:
+                    st.markdown("- " + step)
+
+           if already_acted:
+                    st.markdown("**If you already did this:**")
+                for step in already_acted:
+                    st.markdown("- " + step)
             else:
                 st.info("The existing rules found no warning signs in this example.")
 
