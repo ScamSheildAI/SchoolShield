@@ -955,16 +955,8 @@ def evaluate_guardian(test_data, detector, guardian):
     return metrics, df
 
 
-# ============================================================
-# SAFETY RESPONSE GUIDANCE
-# ============================================================
-
 def get_safety_guidance(title, message, reasons):
-    """Return practical next steps based on the Guardian that flagged the message.
-
-    This is a transparent rule-based guidance feature, not a generative AI model
-    and not a substitute for help from a trusted adult or official provider.
-    """
+    """Return practical next steps based on the Guardian that flagged the message."""
     text = message.casefold()
     guidance = []
     already_acted = []
@@ -974,15 +966,18 @@ def get_safety_guidance(title, message, reasons):
             "Do not reply, click links, open attachments, or download anything from the message.",
             "Do not share an OTP, password, PIN, verification code, or banking information.",
             "Check the claim independently using the organisation's official app, website, or a contact number you already trust.",
-            "Block and report the sender using the messaging app or email service's built-in tools."
+            "Block and report the sender using the messaging app or email service's built-in tools.",
+            "If you are unsure or worried, show the message to a trusted adult."
         ]
+
         if re.search(r"\b(otp|verification code|password|passcode|pin|bank|card|payment|transfer|money)\b", text):
             already_acted.append(
-                "If you already shared a code, password, PIN, or payment details, tell a trusted adult immediately. Contact the bank or service through its official app or website, change affected credentials, and ask them to secure the account."
+                "If you already shared sensitive information, tell a trusted adult and contact the service through its official channels."
             )
+
         if re.search(r"https?://|www\.", text):
             already_acted.append(
-                "If you already opened a link, close the page. Do not enter any more information or install anything it offers. Ask a trusted adult to help check the device and account."
+                "If you already opened a link, close the page. Do not enter more information or install anything. Ask a trusted adult for help."
             )
 
     elif "Cyberbullying" in title:
@@ -990,23 +985,25 @@ def get_safety_guidance(title, message, reasons):
             "Do not respond with insults or threats; step away from the conversation if you can.",
             "Save a record of the messages or posts if it is safe to do so. Do not forward or repost hurtful content.",
             "Use the platform's block and report features, and adjust who can contact or tag you.",
-            "Talk to a trusted adult, parent, teacher, or school counsellor. You do not have to handle it alone."
+            "Talk to a trusted adult, parent, teacher, or school counsellor."
         ]
+
         if re.search(r"\b(threat|hurt|beat|attack|danger|blackmail)\b", text):
             already_acted.append(
-                "If someone may hurt you or you feel in immediate danger, move to a safe place and tell a trusted adult or local emergency service right away."
+                "If someone may hurt you or you feel in immediate danger, move to a safe place and tell a trusted adult or local emergency service."
             )
 
-    else:  # Privacy Guardian
+    else:
         guidance = [
             "Avoid posting or sending personal details such as your address, phone number, school details, passwords, or verification codes.",
-            "Delete or remove the exposed information where possible, and ask the platform to remove copies if needed.",
+            "Delete or remove exposed information where possible.",
             "Review account privacy settings and limit who can view your profile or contact you.",
-            "Tell a trusted adult so they can help you decide whether any accounts or services need securing."
+            "Tell a trusted adult so they can help you secure your accounts."
         ]
+
         if re.search(r"\b(password|passcode|otp|verification code|pin|bank|card)\b", text):
             already_acted.append(
-                "If a password or code was exposed, change the affected password using the official app or website, enable two-step verification where available, and contact the bank or service if financial details were involved."
+                "If a password or code was exposed, change the affected password using the official app or website and tell a trusted adult."
             )
 
     return guidance, already_acted
@@ -1311,13 +1308,26 @@ def guardian_page(title, description, detector, samples, label):
         else:
             detected, reasons = detector(message.strip())
             st.markdown("### ⚡ Instant rule-based result")
+
             if detected:
                 st.warning("Possible warning signs detected:")
                 for reason in reasons:
                     st.markdown("- " + reason)
+
+                guidance, already_acted = get_safety_guidance(
+                    title, message.strip(), reasons
+                )
+
+                st.markdown("**What you can do next:**")
+                for step in guidance:
+                    st.markdown("- " + step)
+
+                if already_acted:
+                    st.markdown("**If you already did this:**")
+                    for step in already_acted:
+                        st.markdown("- " + step)
             else:
                 st.info("The existing rules found no warning signs in this example.")
-
     if st.button("🧠 Add Gemini explanation", key=title + "_analyse"):
         if not message.strip() and audio_recording is None:
             st.warning("Enter a fictional message or record a fictional voice example.")
