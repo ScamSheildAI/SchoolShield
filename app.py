@@ -21,60 +21,175 @@ st.set_page_config(
 )
 
 # ============================================================
-# DESIGN
+# PREMIUM SCHOOLSHIELD DESIGN
 # ============================================================
 
 st.markdown("""
 <style>
+/* Main background */
 .stApp {
-    background: #081426;
-    color: #F1F5F9;
+    background:
+        radial-gradient(ellipse at 10% 0%, #172554 0%, transparent 42%),
+        radial-gradient(ellipse at 90% 10%, #312e81 0%, transparent 35%),
+        #080D1B;
+    color: #F8FAFC;
 }
+
+/* Main content */
+.block-container {
+    max-width: 1400px;
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+}
+
+/* Sidebar */
 [data-testid="stSidebar"] {
-    background: #101F35;
+    background: linear-gradient(180deg, #111B32, #0B1222);
+    border-right: 1px solid #263653;
 }
-h1, h2, h3 {
-    color: #E2E8F0;
+
+/* Typography */
+h1 {
+    color: #F8FAFC !important;
+    font-weight: 800 !important;
+    letter-spacing: -1.2px;
 }
-p, label, li {
+h2, h3 {
+    color: #E2E8F0 !important;
+    font-weight: 700 !important;
+}
+p, label, li, .stMarkdown {
     color: #CBD5E1;
 }
+
+/* Metrics */
 div[data-testid="stMetric"] {
-    background: #14243B;
-    border: 1px solid #263B58;
-    padding: 15px;
-    border-radius: 12px;
+    background: linear-gradient(145deg, #17243D, #101A2E);
+    border: 1px solid #304362;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.20);
 }
-.stButton button {
-    background: #2563EB;
-    color: #FFFFFF;
-    border-radius: 8px;
+div[data-testid="stMetricLabel"] {
+    color: #9FB4D0 !important;
 }
-div[data-testid="stTextArea"] textarea {
-    background-color: #172A43 !important;
-    color: #FFFFFF !important;
-    -webkit-text-fill-color: #FFFFFF !important;
-    border: 1px solid #49617D !important;
-    border-radius: 10px !important;
-    caret-color: #FFFFFF !important;
+div[data-testid="stMetricValue"] {
+    color: #67E8F9 !important;
+    font-weight: 800;
+}
+
+/* Cards and expanders */
+div[data-testid="stExpander"] {
+    background: #111D32;
+    border: 1px solid #304362;
+    border-radius: 15px;
+}
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    border-radius: 18px;
+    border-color: #304362;
+}
+
+/* Buttons */
+.stButton button, .stDownloadButton button,
+.stFormSubmitButton button {
+    background: linear-gradient(110deg, #2563EB, #7C3AED);
+    color: white !important;
+    border: 0;
+    border-radius: 11px;
+    min-height: 44px;
+    font-weight: 700;
+    transition: all .2s ease;
+}
+.stButton button:hover, .stDownloadButton button:hover {
+    border: 1px solid #67E8F9;
+    box-shadow: 0 0 20px rgba(34,211,238,.22);
+    transform: translateY(-1px);
+}
+
+/* Text inputs */
+div[data-testid="stTextArea"] textarea,
+div[data-testid="stTextInput"] input {
+    background: #101D33 !important;
+    color: #F8FAFC !important;
+    -webkit-text-fill-color: #F8FAFC !important;
+    border: 1px solid #405675 !important;
+    border-radius: 12px !important;
+    caret-color: #67E8F9 !important;
     font-size: 16px !important;
 }
 div[data-testid="stTextArea"] textarea::placeholder {
-    color: #A9BCD3 !important;
+    color: #91A5C0 !important;
     opacity: 1 !important;
 }
-div[data-testid="stTextArea"] textarea:focus {
-    border: 2px solid #3B82F6 !important;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+div[data-testid="stTextArea"] textarea:focus,
+div[data-testid="stTextInput"] input:focus {
+    border: 1px solid #22D3EE !important;
+    box-shadow: 0 0 0 2px rgba(34,211,238,.15) !important;
 }
+
+/* Select boxes */
+div[data-baseweb="select"] > div {
+    background: #14213A;
+    border-color: #405675;
+    border-radius: 10px;
+    color: white;
+}
+
+/* Navigation */
+div[role="radiogroup"] {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px;
+    background: #111D32;
+    border: 1px solid #304362;
+    border-radius: 16px;
+    margin: 10px 0 24px 0;
+}
+div[role="radiogroup"] label {
+    background: #1A2943;
+    border: 1px solid #354B6B;
+    border-radius: 10px;
+    padding: 8px 14px;
+    margin: 0 !important;
+}
+div[role="radiogroup"] label:has(input:checked) {
+    background: linear-gradient(110deg, #1D4ED8, #6D28D9);
+    border-color: #67E8F9;
+}
+
+/* Alerts */
+div[data-testid="stAlert"] {
+    border-radius: 13px;
+}
+
+/* Tables */
+div[data-testid="stDataFrame"] {
+    border: 1px solid #304362;
+    border-radius: 13px;
+    overflow: hidden;
+}
+
+/* Dividers */
+hr {
+    border-color: #263653;
+}
+
+/* Small screens */
 @media (max-width: 768px) {
-    div[data-testid="stTextArea"] textarea {
-        font-size: 16px !important;
-        min-height: 130px;
+    .block-container {
+        padding: 1rem 1rem 2rem 1rem;
+    }
+    h1 {
+        font-size: 2rem !important;
+    }
+    div[data-testid="stMetric"] {
+        padding: 13px;
     }
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 # ============================================================
