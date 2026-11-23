@@ -167,6 +167,31 @@ hr {
     border-color: #263653;
 }
 
+/* Cyber Command Centre visual upgrade */
+.stApp {
+    background:
+        radial-gradient(circle at 12% 8%, rgba(6,182,212,.16), transparent 28%),
+        radial-gradient(circle at 88% 18%, rgba(37,99,235,.18), transparent 30%),
+        linear-gradient(145deg, #050914 0%, #091426 52%, #070D1B 100%);
+}
+
+h1 { text-shadow: 0 0 28px rgba(34,211,238,.18); }
+.stMarkdown a { color: #67E8F9 !important; }
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    background: linear-gradient(145deg, rgba(18,35,59,.92), rgba(9,20,37,.94));
+    border: 1px solid rgba(65,213,235,.22) !important;
+    box-shadow: 0 12px 34px rgba(0,0,0,.22);
+}
+[data-testid="stImage"] img {
+    border-radius: 16px;
+    border: 1px solid rgba(103,232,249,.22);
+}
+.stCaption, [data-testid="stCaption"] { color: #8FA8C6 !important; }
+.stButton button, .stFormSubmitButton button {
+    background: linear-gradient(105deg, #0891B2, #2563EB 58%, #6D28D9);
+    box-shadow: 0 5px 18px rgba(8,145,178,.18);
+}
+
 /* Small screens */
 @media (max-width: 768px) {
     .block-container {
@@ -1439,8 +1464,20 @@ def show_gemini_result(title, message, detector, label, ai_result):
 # ============================================================
 
 def guardian_page(title, description, detector, samples, label):
-    st.title(title)
-    st.write(description)
+    guardian_art = {
+        "Phishing Guardian": "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=1000&q=85",
+        "Cyberbullying Guardian": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1000&q=85",
+        "Privacy Guardian": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1000&q=85",
+    }
+    art_url = next((url for name, url in guardian_art.items() if name in title), guardian_art["Privacy Guardian"])
+    intro, visual = st.columns([1.35, 0.85], vertical_alignment="center")
+    with intro:
+        st.markdown("<div style='color:#67E8F9;font-size:12px;font-weight:800;letter-spacing:2px;'>SCHOOLSHIELD / PROTECTION MODULE</div>", unsafe_allow_html=True)
+        st.title(title)
+        st.write(description)
+        st.caption("Explore a fictional example, then review the warning signs and safety guidance.")
+    with visual:
+        st.image(art_url, use_container_width=True)
     st.markdown("---")
 
     options = ["Choose an example"] + [
@@ -1725,50 +1762,54 @@ st.caption("Student-built educational prototype")
 
 if page == "Dashboard":
 
-    st.title("🛡️ Welcome to SchoolShield")
-    st.subheader("One Platform. Three Layers of Protection.")
-
-    st.write(
-        "A student-focused digital safety platform combining Groq context analysis "
-        "with rule-based safety checks to help recognise suspicious messages, "
-        "harmful language and possible privacy risks."
-    )
-
-    st.markdown("---")
-
-    a, b, c = st.columns(3)
-
-    with a:
-        st.subheader("🎣 Phishing Guardian")
-        st.write(
-            "Checks for suspicious links, pressure and information requests."
+    hero_text, hero_art = st.columns([1.15, 0.85], vertical_alignment="center")
+    with hero_text:
+        st.markdown(
+            "<div style='display:inline-block;padding:7px 12px;border:1px solid rgba(103,232,249,.35);border-radius:30px;background:rgba(8,145,178,.12);color:#67E8F9;font-size:12px;font-weight:800;letter-spacing:1.5px;'>✦ STUDENT DIGITAL SAFETY SYSTEM</div>",
+            unsafe_allow_html=True
         )
-
-    with b:
-        st.subheader("💬 Cyberbullying Guardian")
+        st.title("Your digital world.\nA little safer.")
+        st.subheader("One Platform. Three Layers of Protection.")
         st.write(
-            "Identifies potentially harmful or targeted language."
+            "SchoolShield combines rule-based safety checks with Groq context analysis to help students recognise suspicious messages, harmful language and possible privacy risks."
         )
-
-    with c:
-        st.subheader("🔒 Privacy Guardian")
-        st.write(
-            "Looks for possible personal information."
+        st.caption("THINK CLEARLY  •  CHECK CAREFULLY  •  STAY SAFE ONLINE")
+    with hero_art:
+        st.image(
+            "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1200&q=90",
+            use_container_width=True
         )
 
     st.markdown("---")
-    st.subheader("📊 SchoolShield Test Dataset")
+    st.markdown("### YOUR THREE GUARDIANS")
+    st.caption("Choose a protection layer to explore its safety checks.")
 
+    card_columns = st.columns(3, gap="large")
+    guardian_cards = [
+        ("🎣 Phishing Guardian", "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=900&q=85", "Spot suspicious links, pressure tactics and requests for sensitive information.", "01"),
+        ("💬 Cyberbullying Guardian", "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=85", "Recognise potentially harmful, humiliating or targeted language.", "02"),
+        ("🔐 Privacy Guardian", "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&w=900&q=85", "Notice when a message may expose or request personal information.", "03"),
+    ]
+    # Use a dedicated technology image for the privacy card.
+    guardian_cards[2] = (guardian_cards[2][0], "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&w=900&q=85", guardian_cards[2][2], guardian_cards[2][3])
+    for column, (name, art, description, number) in zip(card_columns, guardian_cards):
+        with column:
+            with st.container(border=True):
+                st.image(art, use_container_width=True)
+                st.markdown(f"<div style='color:#67E8F9;font-size:11px;font-weight:800;letter-spacing:1.5px;'>GUARDIAN {number}</div>", unsafe_allow_html=True)
+                st.subheader(name)
+                st.write(description)
+
+    st.markdown("---")
+    st.markdown("### THE SCHOOLSHIELD SYSTEM")
     x, y, z, w = st.columns(4)
-
-    x.metric("Guardians", "3")
-    y.metric("Original Tests", "30")
-    z.metric("Unique Challenge Tests", "120")
-    w.metric("Total Tests", "150")
+    x.metric("Protection layers", "03")
+    y.metric("Original examples", "30")
+    z.metric("Challenge examples", "120")
+    w.metric("Total test examples", "150")
 
     st.info(
-        "Use the navigation bar above to explore the three Guardians. "
-        "Groq provides context-aware analysis; the original rules remain as a backup."
+        "Start with any Guardian above using the navigation bar. Groq provides context-aware explanations when enabled; rule-based checks remain a separate backup."
     )
 
 
