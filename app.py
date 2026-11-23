@@ -1694,86 +1694,6 @@ if page == "Dashboard":
         )
 
     st.markdown("---")
-    st.markdown("""
-    <style>
-    .guardian-intro { margin: 4px 0 18px 0; color: #AFC2DA; font-size: 15px; }
-    .guardian-tile {
-        min-height: 270px; padding: 22px 20px 18px; border-radius: 20px;
-        background: linear-gradient(155deg, var(--tile-top), #0B1426 78%);
-        border: 1px solid var(--tile-border);
-        box-shadow: 0 14px 34px rgba(0,0,0,.24);
-        position: relative; overflow: hidden;
-    }
-    .guardian-tile:after {
-        content: ""; position: absolute; width: 150px; height: 150px;
-        right: -55px; top: -65px; border-radius: 50%;
-        background: var(--tile-glow); filter: blur(28px); opacity: .55;
-    }
-    .guardian-number { color: var(--tile-accent); font-size: 11px; font-weight: 900; letter-spacing: 2px; }
-    .guardian-symbol {
-        width: 66px; height: 66px; display:flex; align-items:center; justify-content:center;
-        border-radius: 19px; margin: 18px 0 16px; font-size: 34px;
-        background: var(--tile-icon-bg); border: 1px solid var(--tile-border);
-        box-shadow: 0 0 28px var(--tile-glow);
-    }
-    .guardian-name { color: #F4F8FF; font-size: 21px; line-height: 1.2; font-weight: 850; margin-bottom: 9px; }
-    .guardian-desc { color: #B6C5D9; font-size: 13px; line-height: 1.55; min-height: 62px; }
-    .guardian-status { color: var(--tile-accent); font-size: 10px; font-weight: 900; letter-spacing: 1.6px; margin-top: 16px; }
-    @media(max-width: 760px) { .guardian-tile { min-height: 245px; } }
-    </style>
-    """, unsafe_allow_html=True)
-
-    st.markdown("### SELECT YOUR GUARDIAN")
-    st.markdown(
-        "<div class='guardian-intro'>Three intelligent safety layers. Choose a Guardian to begin your check.</div>",
-        unsafe_allow_html=True
-    )
-
-    guardian_cards = [
-        {
-            "page": "Phishing Guardian", "number": "GUARDIAN 01 / MESSAGE SECURITY",
-            "symbol": "🎣", "name": "Phishing Guardian",
-            "description": "Uncover suspicious links, fake offers, urgent demands and attempts to steal account details.",
-            "accent": "#67E8F9", "top": "rgba(35, 25, 83, .78)",
-            "border": "rgba(103, 232, 249, .48)", "glow": "rgba(34, 211, 238, .32)",
-            "iconbg": "rgba(8, 145, 178, .22)"
-        },
-        {
-            "page": "Cyberbullying Guardian", "number": "GUARDIAN 02 / ONLINE WELLBEING",
-            "symbol": "💬", "name": "Cyberbullying Guardian",
-            "description": "Recognise potentially harmful, humiliating, threatening or targeted language.",
-            "accent": "#C4B5FD", "top": "rgba(76, 29, 149, .72)",
-            "border": "rgba(167, 139, 250, .42)", "glow": "rgba(139, 92, 246, .30)",
-            "iconbg": "rgba(124, 58, 237, .22)"
-        },
-        {
-            "page": "Privacy Guardian", "number": "GUARDIAN 03 / PERSONAL DATA",
-            "symbol": "🔐", "name": "Privacy Guardian",
-            "description": "Spot requests or messages that may expose passwords, addresses and other personal information.",
-            "accent": "#A5F3FC", "top": "rgba(18, 47, 91, .72)",
-            "border": "rgba(103, 232, 249, .40)", "glow": "rgba(34, 211, 238, .24)",
-            "iconbg": "rgba(8, 145, 178, .20)"
-        }
-    ]
-
-    card_columns = st.columns(3, gap="large")
-    for column, card in zip(card_columns, guardian_cards):
-        with column:
-            st.markdown(
-                f"""<div class='guardian-tile' style='--tile-accent:{card['accent']};--tile-top:{card['top']};--tile-border:{card['border']};--tile-glow:{card['glow']};--tile-icon-bg:{card['iconbg']};'>
-                <div class='guardian-number'>{card['number']}</div>
-                <div class='guardian-symbol'>{card['symbol']}</div>
-                <div class='guardian-name'>{card['name']}</div>
-                <div class='guardian-desc'>{card['description']}</div>
-                <div class='guardian-status'>● READY TO PROTECT</div>
-                </div>""",
-                unsafe_allow_html=True
-            )
-            if st.button("Launch Guardian  →", key=f"launch_{card['page'].lower().replace(' ', '_')}", use_container_width=True):
-                st.session_state.navigation_page = card["page"]
-                st.rerun()
-
-    st.markdown("---")
     st.markdown("### THE SCHOOLSHIELD SYSTEM")
     x, y, z, w = st.columns(4)
     x.metric("Protection layers", "03")
@@ -1782,7 +1702,7 @@ if page == "Dashboard":
     w.metric("Total test examples", "150")
 
     st.info(
-        "Start with any Guardian above using the navigation bar. Groq provides context-aware explanations when enabled; rule-based checks remain a separate backup."
+        "Choose a Guardian from the navigation menu to begin. Groq provides context-aware explanations when enabled; rule-based checks remain a separate backup."
     )
 
 
