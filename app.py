@@ -1388,7 +1388,7 @@ def show_gemini_result(title, message, detector, label, ai_result):
 
             if clean_item and not duplicate:
                 combined.append(str(item).strip())
-                seen_signs.add((clean_item, words))
+                seen_signs.append((clean_item, words))
 
         for item in combined[:6]:
             st.markdown("- " + item)
