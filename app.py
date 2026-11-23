@@ -1553,7 +1553,7 @@ if "developer_authenticated" not in st.session_state:
 st.sidebar.title("🛡️ SchoolShield")
 st.sidebar.caption("One Platform. Three Layers of Protection.")
 
-if get_gemini_api_key():
+if get_groq_api_key():
     st.sidebar.caption("🧠 Gemini API key detected in Secrets")
 else:
     st.sidebar.caption("⚙️ Gemini API key not detected — check Streamlit Secrets")
