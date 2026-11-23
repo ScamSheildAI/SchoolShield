@@ -1125,53 +1125,79 @@ def get_safety_guidance(title, message, reasons):
 
 
 # ============================================================
-# GEMINI AI ANALYSIS
+# GROQ AI ANALYSIS
 # ============================================================
 
-GEMINI_MODEL = "gemini-3.8-flash"
+GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_TRANSCRIPTION_MODEL = "whisper-large-v3-turbo"
 
 
-def get_gemini_api_key():
-    """Read the API key from Streamlit Secrets; never expose it in the UI."""
+def get_groq_api_key():
+    """Read the Groq API key from Streamlit Secrets."""
     try:
-        return str(st.secrets.get("GEMINI_API_KEY", "")).strip()
+        return str(st.secrets.get("GROQ_API_KEY", "")).strip()
     except Exception:
         return ""
 
 
-def parse_gemini_json(raw_text):
-    """Parse Gemini's JSON response, tolerating optional code fences."""
+def parse_groq_json(raw_text):
+    """Parse and validate the JSON returned by Groq."""
     if not raw_text:
-        raise ValueError("Gemini returned an empty response.")
+        raise ValueError("Groq returned an empty response.")
+
     cleaned = raw_text.strip()
     cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r"\s*```$", "", cleaned)
+
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError:
         match = re.search(r"\{.*\}", cleaned, re.DOTALL)
         if not match:
-            raise ValueError("Gemini response was not valid JSON.")
+            raise ValueError("Groq response was not valid JSON.")
         return json.loads(match.group(0))
 
 
 def analyse_with_gemini(guardian_name, message="", audio_bytes=None):
     """
-    Analyse a fictional message with Gemini.
-    If audio is supplied, Gemini also transcribes it and comments on vocal
-    delivery cautiously. It must not claim to know a speaker's true feelings.
+    Backwards-compatible function name so the existing page keeps working.
+    Analysis is performed by Groq. Audio is transcribed first with Whisper.
     """
-    api_key = get_gemini_api_key()
+    api_key = get_groq_api_key()
     if not api_key:
         raise RuntimeError(
-            "Gemini API key is not configured. Add GEMINI_API_KEY in Streamlit Secrets."
-        )
-    if not GEMINI_SDK_AVAILABLE:
-        raise RuntimeError(
-            "The google-genai package is missing. Add google-genai to requirements.txt."
+            "Groq API key is not configured. Add GROQ_API_KEY in Streamlit Secrets."
         )
 
-    client = genai.Client(api_key=api_key)
+    try:
+        from groq import Groq
+    except ImportError:
+        raise RuntimeError(
+            "The groq package is missing. Add groq to requirements.txt."
+        )
+
+    client = Groq(api_key=api_key)
+    transcript = ""
+
+    # Groq Whisper converts a recording into text. The language model then
+    # analyses that transcript. It does not assess vocal emotion or identity.
+    if audio_bytes:
+        transcription = client.audio.transcriptions.create(
+            file=("schoolshield_recording.wav", audio_bytes),
+            model=GROQ_TRANSCRIPTION_MODEL,
+            response_format="json",
+            temperature=0.0,
+        )
+        transcript = str(getattr(transcription, "text", "") or "").strip()
+
+    message_text = (message or "").strip()
+    if transcript:
+        message_text = (
+            message_text + "\n\nTRANSCRIBED VOICE MESSAGE:\n" + transcript
+        ).strip()
+
+    if not message_text:
+        raise ValueError("Enter a fictional message or record a voice example.")
 
     guardian_guidance = {
         "Phishing Guardian": (
@@ -1181,15 +1207,14 @@ def analyse_with_gemini(guardian_name, message="", audio_bytes=None):
         ),
         "Cyberbullying Guardian": (
             "Assess whether language targets, threatens, humiliates, excludes or "
-            "repeatedly harms a person. Distinguish a disagreement, quotation, "
-            "educational discussion or report from targeted abuse. Do not label "
+            "repeatedly harms a person. Distinguish disagreement, quotation, "
+            "educational discussion or reporting from targeted abuse. Do not label "
             "a person as a bully based on one ambiguous sentence."
         ),
         "Privacy Guardian": (
             "Assess whether the message exposes or requests personal information, "
-            "such as passwords, OTPs, phone numbers, email addresses, home/school "
-            "details, identity numbers or financial details. Do not repeat any "
-            "sensitive values in your response."
+            "such as passwords, OTPs, phone numbers, email addresses, home or school "
+            "details, identity numbers or financial details. Never repeat sensitive values."
         ),
     }
 
@@ -1200,31 +1225,30 @@ educational prototype.
 GUARDIAN: {guardian_name}
 TASK: {guardian_guidance.get(guardian_name, "Assess the message for digital safety risks.")}
 
-Analyse the meaning and context, not just individual keywords.
-The input may be a fictional example, a quotation, a lesson, a report, or a real
-attempt to harm. Do not assume intent when context is unclear.
-Do not repeat passwords, OTPs, phone numbers, email addresses, addresses,
-identity numbers or other sensitive values. If present, describe the type only.
+Analyse meaning and context, not just keywords. The input may be a fictional
+example, quotation, lesson, report, or an attempt to cause harm. Do not assume
+intent when context is unclear.
 
-For Cyberbullying, do not call ordinary disagreement or a single neutral criticism
+Never repeat passwords, OTPs, phone numbers, email addresses, home addresses,
+identity numbers, or other sensitive values. If present, name only the category.
+
+For Cyberbullying, do not call ordinary disagreement or one neutral criticism
 bullying. Look for targeted harmful language, threats, exclusion, humiliation,
 or repeated behaviour where context supports it.
 
-For Phishing, distinguish a warning that says "never share your OTP" from a
+For Phishing, distinguish a warning such as "never share your OTP" from a
 message asking someone to share an OTP.
 
-For Privacy, identify exposed sensitive categories but never reproduce the
-actual values.
+For Privacy, identify exposed sensitive categories without reproducing values.
 
-Also classify the apparent wording tone as one or more of:
+Classify the apparent wording tone as one or more of:
 friendly, neutral, supportive, angry, threatening, pressuring, manipulative,
-or unclear. Tone is an interpretation of the words, not proof of a sender's
+or unclear. Tone is an interpretation of wording, not proof of a person's
 actual emotional state.
 
-If audio is provided, transcribe the spoken message as accurately as possible.
-You may describe vocal delivery as calm, raised, urgent, distressed, or unclear
-only when clearly audible. Do not infer identity, age, personality or true
-emotional state from a voice. If uncertain, say unclear.
+If a voice transcript is included, analyse only the transcribed words.
+Do not infer identity, age, personality, or true emotional state from a voice.
+Vocal delivery is not assessed.
 
 Return ONLY valid JSON with exactly these keys:
 {{
@@ -1236,36 +1260,33 @@ Return ONLY valid JSON with exactly these keys:
   "warning_signs": ["specific warning sign"],
   "next_steps": ["practical safe next step"],
   "tone": ["tone label"],
-  "vocal_delivery": "short cautious description, or Not assessed"
+  "vocal_delivery": "Not assessed"
 }}
 
-Do not provide a guaranteed safety verdict. When evidence is incomplete, choose
-Uncertain. Keep the explanation concise and suitable for school students.
+Do not guarantee safety. If evidence is incomplete, choose Uncertain.
+Keep the response concise and suitable for school students.
 """
 
-    contents = [prompt]
-    if message.strip():
-        contents.append("MESSAGE TEXT:\n" + message.strip())
-    if audio_bytes:
-        contents.append(
-            genai_types.Part.from_bytes(
-                data=audio_bytes,
-                mime_type="audio/wav"
-            )
-        )
-
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=contents,
-        config=genai_types.GenerateContentConfig(
-            response_mime_type="application/json",
-            temperature=0.2,
-            max_output_tokens=1200,
-        ),
+    completion = client.chat.completions.create(
+        model=GROQ_MODEL,
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a careful digital-safety assistant. Follow the requested JSON format exactly.",
+            },
+            {
+                "role": "user",
+                "content": prompt + "\n\nMESSAGE TO ANALYSE:\n" + message_text,
+            },
+        ],
+        temperature=0.2,
+        max_tokens=1200,
+        response_format={"type": "json_object"},
     )
-    result = parse_gemini_json(response.text)
 
-    # Normalise and validate model output before rendering it.
+    raw_text = completion.choices[0].message.content
+    result = parse_groq_json(raw_text)
+
     allowed_verdicts = {
         "Suspicious", "No clear warning signs", "Uncertain"
     }
@@ -1284,39 +1305,50 @@ Uncertain. Keep the explanation concise and suitable for school students.
     for key in ("transcript", "explanation", "context", "vocal_delivery"):
         result[key] = str(result.get(key, ""))[:1200]
 
-    if not result["vocal_delivery"]:
-        result["vocal_delivery"] = "Not assessed"
-
+    # Prefer the actual Whisper transcript over any model-generated transcript.
+    result["transcript"] = transcript
+    result["vocal_delivery"] = "Not assessed"
     return result
 
 
 def show_gemini_result(title, message, detector, label, ai_result):
-    """Combine Gemini context analysis with the existing rule-based safety layer."""
+    """
+    Backwards-compatible display function. The displayed provider is Groq.
+    Existing guardian_page calls can continue using this function name.
+    """
     rules_detected, rule_reasons = detector(message)
     ai_suspicious = ai_result["verdict"] == "Suspicious"
     ai_uncertain = ai_result["verdict"] == "Uncertain"
 
     st.markdown("---")
-    st.subheader("🧠 Gemini Context Analysis")
-    st.caption(f"Analysis model: {GEMINI_MODEL}")
+    st.subheader("🧠 Groq Context Analysis")
+    st.caption(
+        f"Language model: {GROQ_MODEL} · Voice transcription: {GROQ_TRANSCRIPTION_MODEL}"
+    )
 
     if rules_detected or ai_suspicious:
         st.error(f"⚠️ {label} — warning signs found")
     elif ai_uncertain:
-        st.warning("Needs a closer look — Gemini is uncertain")
+        st.warning("Needs a closer look — Groq is uncertain")
     else:
         st.success("No clear warning signs identified")
 
     c1, c2 = st.columns(2)
     c1.metric("Risk level", ai_result["risk_level"])
-    c2.metric("Wording tone", ", ".join(ai_result["tone"]) if ai_result["tone"] else "Unclear")
+    c2.metric(
+        "Wording tone",
+        ", ".join(ai_result["tone"]) if ai_result["tone"] else "Unclear",
+    )
 
     if ai_result.get("transcript"):
         st.write("**Voice transcription:**")
         st.info(ai_result["transcript"])
 
-    st.write("**Gemini's explanation:**")
-    st.write(ai_result["explanation"] or "Gemini did not provide an explanation.")
+    st.write("**Groq's explanation:**")
+    st.write(
+        ai_result["explanation"]
+        or "Groq did not provide an explanation."
+    )
 
     if ai_result.get("context"):
         st.write("**Context understood:**")
@@ -1333,10 +1365,9 @@ def show_gemini_result(title, message, detector, label, ai_result):
     else:
         st.write("**Warning signs:** No specific warning signs were identified.")
 
-    if ai_result.get("vocal_delivery") and ai_result["vocal_delivery"] != "Not assessed":
-        st.write("**Vocal delivery (approximate):**")
-        st.write(ai_result["vocal_delivery"])
-        st.caption("This is an AI interpretation of the recording, not proof of the speaker's feelings.")
+    st.caption(
+        "Vocal delivery is not assessed. A transcript may contain recognition errors."
+    )
 
     st.write("**Suggested next steps:**")
     steps = ai_result["next_steps"]
@@ -1345,12 +1376,11 @@ def show_gemini_result(title, message, detector, label, ai_result):
     for index, step in enumerate(steps[:6], start=1):
         st.markdown(f"{index}. {step}")
 
-    # Never let an AI "safe" answer override a rule-based warning.
     if rules_detected and not ai_suspicious:
         st.warning(
-            "The existing safety rules found a warning sign even though Gemini "
-            "did not classify the message as suspicious. SchoolShield keeps that "
-            "warning visible rather than silently dismissing it."
+            "The existing safety rules found a warning sign even though Groq "
+            "did not classify the message as suspicious. SchoolShield keeps "
+            "that warning visible rather than silently dismissing it."
         )
 
     st.info(
