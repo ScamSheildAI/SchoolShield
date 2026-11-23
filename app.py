@@ -1128,7 +1128,7 @@ def get_safety_guidance(title, message, reasons):
 # GROQ AI ANALYSIS
 # ============================================================
 
-GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_MODEL = "openai/gpt-oss-120b"
 GROQ_TRANSCRIPTION_MODEL = "whisper-large-v3-turbo"
 
 
