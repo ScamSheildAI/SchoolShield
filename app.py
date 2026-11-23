@@ -13,200 +13,112 @@ st.set_page_config(
 )
 
 # ============================================================
-# PREMIUM SCHOOLSHIELD DESIGN
+# PREMIUM SCHOOLSHIELD — CYBER COMMAND CENTRE DESIGN
 # ============================================================
 
 st.markdown("""
 <style>
-/* Main background */
+:root {
+    --ss-bg: #070510;
+    --ss-panel: #110D22;
+    --ss-panel2: #19112F;
+    --ss-line: rgba(167, 139, 250, .24);
+    --ss-violet: #A78BFA;
+    --ss-purple: #8B5CF6;
+    --ss-cyan: #67E8F9;
+    --ss-blue: #60A5FA;
+    --ss-text: #F7F4FF;
+    --ss-muted: #B7AECF;
+}
 .stApp {
     background:
-        radial-gradient(ellipse at 10% 0%, #172554 0%, transparent 42%),
-        radial-gradient(ellipse at 90% 10%, #312e81 0%, transparent 35%),
-        #080D1B;
-    color: #F8FAFC;
+        radial-gradient(ellipse at 12% 0%, rgba(124,58,237,.27), transparent 34%),
+        radial-gradient(ellipse at 88% 8%, rgba(37,99,235,.19), transparent 32%),
+        radial-gradient(ellipse at 52% 100%, rgba(6,182,212,.10), transparent 40%),
+        #070510;
+    color: var(--ss-text);
 }
-
-/* Main content */
-.block-container {
-    max-width: 1400px;
-    padding-top: 2rem;
-    padding-bottom: 3rem;
-}
-
-/* Sidebar */
+.block-container { max-width: 1480px; padding-top: 1.35rem; padding-bottom: 3rem; }
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #111B32, #0B1222);
-    border-right: 1px solid #263653;
+    background: linear-gradient(180deg, #160D2C 0%, #0A0717 100%);
+    border-right: 1px solid rgba(167,139,250,.24);
 }
-
-/* Typography */
-h1 {
-    color: #F8FAFC !important;
-    font-weight: 800 !important;
-    letter-spacing: -1.2px;
-}
-h2, h3 {
-    color: #E2E8F0 !important;
-    font-weight: 700 !important;
-}
-p, label, li, .stMarkdown {
-    color: #CBD5E1;
-}
-
-/* Metrics */
+[data-testid="stSidebar"] * { color: #EDE9FE; }
+h1, h2, h3 { color: var(--ss-text) !important; font-weight: 850 !important; letter-spacing: -.035em; }
+h1 { text-shadow: 0 0 32px rgba(167,139,250,.30); }
+p, label, li, .stMarkdown { color: #DCD5EF; }
+[data-testid="stCaptionContainer"], .stCaption { color: var(--ss-muted) !important; }
 div[data-testid="stMetric"] {
-    background: linear-gradient(145deg, #17243D, #101A2E);
-    border: 1px solid #304362;
-    border-radius: 18px;
-    padding: 20px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.20);
+    background: linear-gradient(145deg, rgba(34,22,62,.94), rgba(13,10,27,.97));
+    border: 1px solid rgba(167,139,250,.28); border-radius: 19px; padding: 18px 20px;
+    box-shadow: 0 12px 34px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.035);
 }
-div[data-testid="stMetricLabel"] {
-    color: #9FB4D0 !important;
+div[data-testid="stMetricLabel"] { color: #BDB2D8 !important; }
+div[data-testid="stMetricValue"] { color: var(--ss-cyan) !important; font-weight: 900; text-shadow: 0 0 18px rgba(103,232,249,.22); }
+div[data-testid="stVerticalBlockBorderWrapper"], div[data-testid="stExpander"] {
+    background: linear-gradient(145deg, rgba(27,17,49,.94), rgba(12,9,25,.97));
+    border: 1px solid rgba(167,139,250,.24) !important; border-radius: 20px;
+    box-shadow: 0 14px 36px rgba(0,0,0,.25);
 }
-div[data-testid="stMetricValue"] {
-    color: #67E8F9 !important;
-    font-weight: 800;
+.stButton button, .stDownloadButton button, .stFormSubmitButton button {
+    background: linear-gradient(105deg, #6D28D9 0%, #7C3AED 48%, #0891B2 100%);
+    color: #fff !important; border: 1px solid rgba(196,181,253,.42);
+    border-radius: 13px; min-height: 46px; font-weight: 850;
+    box-shadow: 0 7px 26px rgba(124,58,237,.27); transition: .2s ease;
 }
-
-/* Cards and expanders */
-div[data-testid="stExpander"] {
-    background: #111D32;
-    border: 1px solid #304362;
-    border-radius: 15px;
+.stButton button:hover, .stDownloadButton button:hover, .stFormSubmitButton button:hover {
+    border-color: var(--ss-cyan); box-shadow: 0 0 28px rgba(139,92,246,.42), 0 0 18px rgba(34,211,238,.18);
+    transform: translateY(-2px);
 }
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    border-radius: 18px;
-    border-color: #304362;
+div[data-testid="stTextArea"] textarea, div[data-testid="stTextInput"] input {
+    background: #100B20 !important; color: var(--ss-text) !important;
+    -webkit-text-fill-color: var(--ss-text) !important;
+    border: 1px solid #514071 !important; border-radius: 14px !important;
+    caret-color: var(--ss-cyan) !important;
 }
-
-/* Buttons */
-.stButton button, .stDownloadButton button,
-.stFormSubmitButton button {
-    background: linear-gradient(110deg, #2563EB, #7C3AED);
-    color: white !important;
-    border: 0;
-    border-radius: 11px;
-    min-height: 44px;
-    font-weight: 700;
-    transition: all .2s ease;
+div[data-testid="stTextArea"] textarea:focus, div[data-testid="stTextInput"] input:focus {
+    border-color: var(--ss-violet) !important;
+    box-shadow: 0 0 0 2px rgba(167,139,250,.17), 0 0 22px rgba(139,92,246,.15) !important;
 }
-.stButton button:hover, .stDownloadButton button:hover {
-    border: 1px solid #67E8F9;
-    box-shadow: 0 0 20px rgba(34,211,238,.22);
-    transform: translateY(-1px);
-}
-
-/* Text inputs */
-div[data-testid="stTextArea"] textarea,
-div[data-testid="stTextInput"] input {
-    background: #101D33 !important;
-    color: #F8FAFC !important;
-    -webkit-text-fill-color: #F8FAFC !important;
-    border: 1px solid #405675 !important;
-    border-radius: 12px !important;
-    caret-color: #67E8F9 !important;
-    font-size: 16px !important;
-}
-div[data-testid="stTextArea"] textarea::placeholder {
-    color: #91A5C0 !important;
-    opacity: 1 !important;
-}
-div[data-testid="stTextArea"] textarea:focus,
-div[data-testid="stTextInput"] input:focus {
-    border: 1px solid #22D3EE !important;
-    box-shadow: 0 0 0 2px rgba(34,211,238,.15) !important;
-}
-
-/* Select boxes */
 div[data-baseweb="select"] > div {
-    background: #14213A;
-    border-color: #405675;
-    border-radius: 10px;
-    color: white;
+    background: #17102B; border-color: #514071; border-radius: 12px; color: white;
 }
-
-/* Navigation */
 div[role="radiogroup"] {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 12px;
-    background: #111D32;
-    border: 1px solid #304362;
-    border-radius: 16px;
-    margin: 10px 0 24px 0;
+    display:flex; flex-wrap:wrap; gap:8px; padding:11px;
+    background:rgba(19,12,37,.94); border:1px solid rgba(167,139,250,.25);
+    border-radius:16px; margin:8px 0 22px;
 }
 div[role="radiogroup"] label {
-    background: #1A2943;
-    border: 1px solid #354B6B;
-    border-radius: 10px;
-    padding: 8px 14px;
-    margin: 0 !important;
+    background:#211638; border:1px solid #49366A; border-radius:11px;
+    padding:8px 14px; margin:0 !important;
 }
 div[role="radiogroup"] label:has(input:checked) {
-    background: linear-gradient(110deg, #1D4ED8, #6D28D9);
-    border-color: #67E8F9;
-}
-
-/* Alerts */
-div[data-testid="stAlert"] {
-    border-radius: 13px;
-}
-
-/* Tables */
-div[data-testid="stDataFrame"] {
-    border: 1px solid #304362;
-    border-radius: 13px;
-    overflow: hidden;
-}
-
-/* Dividers */
-hr {
-    border-color: #263653;
-}
-
-/* Cyber Command Centre visual upgrade */
-.stApp {
-    background:
-        radial-gradient(circle at 12% 8%, rgba(6,182,212,.16), transparent 28%),
-        radial-gradient(circle at 88% 18%, rgba(37,99,235,.18), transparent 30%),
-        linear-gradient(145deg, #050914 0%, #091426 52%, #070D1B 100%);
-}
-
-h1 { text-shadow: 0 0 28px rgba(34,211,238,.18); }
-.stMarkdown a { color: #67E8F9 !important; }
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: linear-gradient(145deg, rgba(18,35,59,.92), rgba(9,20,37,.94));
-    border: 1px solid rgba(65,213,235,.22) !important;
-    box-shadow: 0 12px 34px rgba(0,0,0,.22);
+    background:linear-gradient(110deg,#6D28D9,#4F46E5,#0E7490);
+    border-color:var(--ss-cyan); box-shadow:0 0 18px rgba(139,92,246,.24);
 }
 [data-testid="stImage"] img {
-    border-radius: 16px;
-    border: 1px solid rgba(103,232,249,.22);
+    border-radius:19px; border:1px solid rgba(167,139,250,.30);
+    box-shadow:0 12px 34px rgba(0,0,0,.25);
 }
-.stCaption, [data-testid="stCaption"] { color: #8FA8C6 !important; }
-.stButton button, .stFormSubmitButton button {
-    background: linear-gradient(105deg, #0891B2, #2563EB 58%, #6D28D9);
-    box-shadow: 0 5px 18px rgba(8,145,178,.18);
+div[data-testid="stAlert"] { border-radius:15px; }
+div[data-testid="stDataFrame"] { border:1px solid rgba(167,139,250,.25); border-radius:15px; overflow:hidden; }
+.stMarkdown a { color:var(--ss-cyan) !important; }
+hr { border-color:rgba(167,139,250,.20); }
+.guardian-tile {
+    backdrop-filter: blur(16px);
+    background: linear-gradient(150deg, rgba(42,25,76,.82), rgba(13,9,29,.97) 76%) !important;
+    border: 1px solid rgba(167,139,250,.42) !important;
+    box-shadow: 0 15px 40px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.05) !important;
 }
-
-/* Small screens */
-@media (max-width: 768px) {
-    .block-container {
-        padding: 1rem 1rem 2rem 1rem;
-    }
-    h1 {
-        font-size: 2rem !important;
-    }
-    div[data-testid="stMetric"] {
-        padding: 13px;
-    }
+.guardian-tile:after { opacity:.72 !important; }
+.guardian-symbol { box-shadow:0 0 30px var(--tile-glow), inset 0 0 18px rgba(255,255,255,.04) !important; }
+@media(max-width:768px) {
+    .block-container { padding:1rem .9rem 2rem; }
+    h1 { font-size:2rem !important; }
+    div[data-testid="stMetric"] { padding:13px; }
 }
 </style>
 """, unsafe_allow_html=True)
-
 
 
 # ============================================================
@@ -1479,6 +1391,10 @@ def guardian_page(title, description, detector, samples, label):
     with visual:
         st.image(art_url, use_container_width=True)
     st.markdown("---")
+    st.markdown(
+        "<div style='padding:12px 16px;border:1px solid rgba(167,139,250,.28);border-radius:14px;background:linear-gradient(100deg,rgba(124,58,237,.14),rgba(8,145,178,.08));color:#C4B5FD;font-size:12px;font-weight:850;letter-spacing:1.5px;'>✦ GUARDIAN SCAN CONSOLE&nbsp;&nbsp; / &nbsp;&nbsp; FICTIONAL EXAMPLES ONLY</div>",
+        unsafe_allow_html=True
+    )
 
     options = ["Choose an example"] + [
         f"Example {i + 1}" for i in range(len(samples))
@@ -1714,34 +1630,23 @@ if (
 # Main navigation is displayed across the top of the app.
 st.markdown("""
 <style>
-/* Make the top navigation easy to scan and tap. */
+/* Holographic top navigation */
 div[role="radiogroup"] {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0.45rem;
-    padding: 0.55rem 0.7rem;
-    background: #101F35;
-    border: 1px solid #263B58;
-    border-radius: 12px;
-    margin: 0.25rem 0 1.25rem 0;
+    display:flex; flex-direction:row; flex-wrap:wrap; gap:.5rem;
+    padding:.65rem .75rem; background:rgba(18,11,35,.96);
+    border:1px solid rgba(167,139,250,.30); border-radius:16px;
+    margin:.25rem 0 1.25rem;
+    box-shadow:0 8px 28px rgba(0,0,0,.22);
 }
 div[role="radiogroup"] label {
-    background: #172A43;
-    border: 1px solid #38516F;
-    border-radius: 9px;
-    padding: 0.45rem 0.85rem;
-    margin: 0 !important;
+    background:#211638; border:1px solid #49366A; border-radius:11px;
+    padding:.5rem .9rem; margin:0 !important;
 }
 div[role="radiogroup"] label:has(input:checked) {
-    background: #1D4ED8;
-    border-color: #60A5FA;
+    background:linear-gradient(110deg,#6D28D9,#4F46E5,#0E7490);
+    border-color:#67E8F9; box-shadow:0 0 18px rgba(139,92,246,.25);
 }
-@media (max-width: 640px) {
-    div[role="radiogroup"] label {
-        padding: 0.4rem 0.55rem;
-    }
-}
+@media(max-width:640px) { div[role="radiogroup"] label { padding:.4rem .55rem; } }
 </style>
 """, unsafe_allow_html=True)
 
@@ -1765,13 +1670,21 @@ if page == "Dashboard":
     hero_text, hero_art = st.columns([1.15, 0.85], vertical_alignment="center")
     with hero_text:
         st.markdown(
-            "<div style='display:inline-block;padding:7px 12px;border:1px solid rgba(103,232,249,.35);border-radius:30px;background:rgba(8,145,178,.12);color:#67E8F9;font-size:12px;font-weight:800;letter-spacing:1.5px;'>✦ STUDENT DIGITAL SAFETY SYSTEM</div>",
+            "<div style='display:inline-block;padding:8px 14px;border:1px solid rgba(167,139,250,.48);border-radius:30px;background:linear-gradient(100deg,rgba(124,58,237,.20),rgba(8,145,178,.13));color:#C4B5FD;font-size:12px;font-weight:900;letter-spacing:1.8px;box-shadow:0 0 24px rgba(139,92,246,.16);'>✦ AI FUTURISTIC DIGITAL SAFETY SYSTEM</div>",
             unsafe_allow_html=True
         )
         st.title("Your digital world.\nA little safer.")
         st.subheader("One Platform. Three Layers of Protection.")
         st.write(
-            "SchoolShield combines rule-based safety checks with Groq context analysis to help students recognise suspicious messages, harmful language and possible privacy risks."
+            "A student-focused digital safety command centre that helps identify suspicious messages, potentially harmful language and possible privacy risks."
+        )
+        st.markdown(
+            "<div style='display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 8px;'>"
+            "<span style='padding:7px 11px;border:1px solid rgba(103,232,249,.3);border-radius:30px;background:rgba(8,145,178,.12);color:#A5F3FC;font-size:12px;'>✦ PHISHING DEFENCE</span>"
+            "<span style='padding:7px 11px;border:1px solid rgba(167,139,250,.3);border-radius:30px;background:rgba(124,58,237,.12);color:#DDD6FE;font-size:12px;'>✦ CYBERBULLYING AWARENESS</span>"
+            "<span style='padding:7px 11px;border:1px solid rgba(74,222,128,.3);border-radius:30px;background:rgba(22,163,74,.10);color:#BBF7D0;font-size:12px;'>✦ PRIVACY PROTECTION</span>"
+            "</div>",
+            unsafe_allow_html=True
         )
         st.caption("THINK CLEARLY  •  CHECK CAREFULLY  •  STAY SAFE ONLINE")
     with hero_art:
@@ -1781,24 +1694,84 @@ if page == "Dashboard":
         )
 
     st.markdown("---")
-    st.markdown("### YOUR THREE GUARDIANS")
-    st.caption("Choose a protection layer to explore its safety checks.")
+    st.markdown("""
+    <style>
+    .guardian-intro { margin: 4px 0 18px 0; color: #AFC2DA; font-size: 15px; }
+    .guardian-tile {
+        min-height: 270px; padding: 22px 20px 18px; border-radius: 20px;
+        background: linear-gradient(155deg, var(--tile-top), #0B1426 78%);
+        border: 1px solid var(--tile-border);
+        box-shadow: 0 14px 34px rgba(0,0,0,.24);
+        position: relative; overflow: hidden;
+    }
+    .guardian-tile:after {
+        content: ""; position: absolute; width: 150px; height: 150px;
+        right: -55px; top: -65px; border-radius: 50%;
+        background: var(--tile-glow); filter: blur(28px); opacity: .55;
+    }
+    .guardian-number { color: var(--tile-accent); font-size: 11px; font-weight: 900; letter-spacing: 2px; }
+    .guardian-symbol {
+        width: 66px; height: 66px; display:flex; align-items:center; justify-content:center;
+        border-radius: 19px; margin: 18px 0 16px; font-size: 34px;
+        background: var(--tile-icon-bg); border: 1px solid var(--tile-border);
+        box-shadow: 0 0 28px var(--tile-glow);
+    }
+    .guardian-name { color: #F4F8FF; font-size: 21px; line-height: 1.2; font-weight: 850; margin-bottom: 9px; }
+    .guardian-desc { color: #B6C5D9; font-size: 13px; line-height: 1.55; min-height: 62px; }
+    .guardian-status { color: var(--tile-accent); font-size: 10px; font-weight: 900; letter-spacing: 1.6px; margin-top: 16px; }
+    @media(max-width: 760px) { .guardian-tile { min-height: 245px; } }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("### SELECT YOUR GUARDIAN")
+    st.markdown(
+        "<div class='guardian-intro'>Three intelligent safety layers. Choose a Guardian to begin your check.</div>",
+        unsafe_allow_html=True
+    )
+
+    guardian_cards = [
+        {
+            "page": "Phishing Guardian", "number": "GUARDIAN 01 / MESSAGE SECURITY",
+            "symbol": "🎣", "name": "Phishing Guardian",
+            "description": "Uncover suspicious links, fake offers, urgent demands and attempts to steal account details.",
+            "accent": "#67E8F9", "top": "rgba(35, 25, 83, .78)",
+            "border": "rgba(103, 232, 249, .48)", "glow": "rgba(34, 211, 238, .32)",
+            "iconbg": "rgba(8, 145, 178, .22)"
+        },
+        {
+            "page": "Cyberbullying Guardian", "number": "GUARDIAN 02 / ONLINE WELLBEING",
+            "symbol": "💬", "name": "Cyberbullying Guardian",
+            "description": "Recognise potentially harmful, humiliating, threatening or targeted language.",
+            "accent": "#C4B5FD", "top": "rgba(76, 29, 149, .72)",
+            "border": "rgba(167, 139, 250, .42)", "glow": "rgba(139, 92, 246, .30)",
+            "iconbg": "rgba(124, 58, 237, .22)"
+        },
+        {
+            "page": "Privacy Guardian", "number": "GUARDIAN 03 / PERSONAL DATA",
+            "symbol": "🔐", "name": "Privacy Guardian",
+            "description": "Spot requests or messages that may expose passwords, addresses and other personal information.",
+            "accent": "#A5F3FC", "top": "rgba(18, 47, 91, .72)",
+            "border": "rgba(103, 232, 249, .40)", "glow": "rgba(34, 211, 238, .24)",
+            "iconbg": "rgba(8, 145, 178, .20)"
+        }
+    ]
 
     card_columns = st.columns(3, gap="large")
-    guardian_cards = [
-        ("🎣 Phishing Guardian", "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=900&q=85", "Spot suspicious links, pressure tactics and requests for sensitive information.", "01"),
-        ("💬 Cyberbullying Guardian", "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=85", "Recognise potentially harmful, humiliating or targeted language.", "02"),
-        ("🔐 Privacy Guardian", "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&w=900&q=85", "Notice when a message may expose or request personal information.", "03"),
-    ]
-    # Use a dedicated technology image for the privacy card.
-    guardian_cards[2] = (guardian_cards[2][0], "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&w=900&q=85", guardian_cards[2][2], guardian_cards[2][3])
-    for column, (name, art, description, number) in zip(card_columns, guardian_cards):
+    for column, card in zip(card_columns, guardian_cards):
         with column:
-            with st.container(border=True):
-                st.image(art, use_container_width=True)
-                st.markdown(f"<div style='color:#67E8F9;font-size:11px;font-weight:800;letter-spacing:1.5px;'>GUARDIAN {number}</div>", unsafe_allow_html=True)
-                st.subheader(name)
-                st.write(description)
+            st.markdown(
+                f"""<div class='guardian-tile' style='--tile-accent:{card['accent']};--tile-top:{card['top']};--tile-border:{card['border']};--tile-glow:{card['glow']};--tile-icon-bg:{card['iconbg']};'>
+                <div class='guardian-number'>{card['number']}</div>
+                <div class='guardian-symbol'>{card['symbol']}</div>
+                <div class='guardian-name'>{card['name']}</div>
+                <div class='guardian-desc'>{card['description']}</div>
+                <div class='guardian-status'>● READY TO PROTECT</div>
+                </div>""",
+                unsafe_allow_html=True
+            )
+            if st.button("Launch Guardian  →", key=f"launch_{card['page'].lower().replace(' ', '_')}", use_container_width=True):
+                st.session_state.navigation_page = card["page"]
+                st.rerun()
 
     st.markdown("---")
     st.markdown("### THE SCHOOLSHIELD SYSTEM")
