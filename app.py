@@ -19,12 +19,12 @@ st.set_page_config(
 st.markdown("""
 <style>
 :root {
-    --ss-bg: #070510;
-    --ss-panel: #110D22;
-    --ss-panel2: #19112F;
+    --ss-bg: #04030A;
+    --ss-panel: #090611;
+    --ss-panel2: #0D0819;
     --ss-line: rgba(167, 139, 250, .24);
-    --ss-violet: #A78BFA;
-    --ss-purple: #8B5CF6;
+    --ss-violet: #8B70D6;
+    --ss-purple: #6036A8;
     --ss-cyan: #67E8F9;
     --ss-blue: #60A5FA;
     --ss-text: #F7F4FF;
@@ -32,15 +32,15 @@ st.markdown("""
 }
 .stApp {
     background:
-        radial-gradient(ellipse at 12% 0%, rgba(124,58,237,.27), transparent 34%),
-        radial-gradient(ellipse at 88% 8%, rgba(37,99,235,.19), transparent 32%),
-        radial-gradient(ellipse at 52% 100%, rgba(6,182,212,.10), transparent 40%),
-        #070510;
+        radial-gradient(ellipse at 12% 0%, rgba(66,24,122,.22), transparent 34%),
+        radial-gradient(ellipse at 88% 8%, rgba(30,58,138,.13), transparent 32%),
+        radial-gradient(ellipse at 52% 100%, rgba(6,100,120,.07), transparent 40%),
+        #04030A;
     color: var(--ss-text);
 }
 .block-container { max-width: 1480px; padding-top: 1.35rem; padding-bottom: 3rem; }
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #160D2C 0%, #0A0717 100%);
+    background: linear-gradient(180deg, #0D0719 0%, #05040B 100%);
     border-right: 1px solid rgba(167,139,250,.24);
 }
 [data-testid="stSidebar"] * { color: #EDE9FE; }
@@ -49,31 +49,31 @@ h1 { text-shadow: 0 0 32px rgba(167,139,250,.30); }
 p, label, li, .stMarkdown { color: #DCD5EF; }
 [data-testid="stCaptionContainer"], .stCaption { color: var(--ss-muted) !important; }
 div[data-testid="stMetric"] {
-    background: linear-gradient(145deg, rgba(34,22,62,.94), rgba(13,10,27,.97));
+    background: linear-gradient(145deg, rgba(17,10,32,.96), rgba(7,5,15,.98));
     border: 1px solid rgba(167,139,250,.28); border-radius: 19px; padding: 18px 20px;
     box-shadow: 0 12px 34px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.035);
 }
 div[data-testid="stMetricLabel"] { color: #BDB2D8 !important; }
 div[data-testid="stMetricValue"] { color: var(--ss-cyan) !important; font-weight: 900; text-shadow: 0 0 18px rgba(103,232,249,.22); }
 div[data-testid="stVerticalBlockBorderWrapper"], div[data-testid="stExpander"] {
-    background: linear-gradient(145deg, rgba(27,17,49,.94), rgba(12,9,25,.97));
+    background: linear-gradient(145deg, rgba(15,9,27,.96), rgba(6,5,13,.98));
     border: 1px solid rgba(167,139,250,.24) !important; border-radius: 20px;
     box-shadow: 0 14px 36px rgba(0,0,0,.25);
 }
 .stButton button, .stDownloadButton button, .stFormSubmitButton button {
-    background: linear-gradient(105deg, #6D28D9 0%, #7C3AED 48%, #0891B2 100%);
+    background: linear-gradient(105deg, #32105F 0%, #482080 48%, #07566B 100%);
     color: #fff !important; border: 1px solid rgba(196,181,253,.42);
     border-radius: 13px; min-height: 46px; font-weight: 850;
-    box-shadow: 0 7px 26px rgba(124,58,237,.27); transition: .2s ease;
+    box-shadow: 0 7px 26px rgba(66,24,122,.22); transition: .2s ease;
 }
 .stButton button:hover, .stDownloadButton button:hover, .stFormSubmitButton button:hover {
     border-color: var(--ss-cyan); box-shadow: 0 0 28px rgba(139,92,246,.42), 0 0 18px rgba(34,211,238,.18);
     transform: translateY(-2px);
 }
 div[data-testid="stTextArea"] textarea, div[data-testid="stTextInput"] input {
-    background: #100B20 !important; color: var(--ss-text) !important;
+    background: #090611 !important; color: var(--ss-text) !important;
     -webkit-text-fill-color: var(--ss-text) !important;
-    border: 1px solid #514071 !important; border-radius: 14px !important;
+    border: 1px solid #302344 !important; border-radius: 14px !important;
     caret-color: var(--ss-cyan) !important;
 }
 div[data-testid="stTextArea"] textarea:focus, div[data-testid="stTextInput"] input:focus {
@@ -81,19 +81,19 @@ div[data-testid="stTextArea"] textarea:focus, div[data-testid="stTextInput"] inp
     box-shadow: 0 0 0 2px rgba(167,139,250,.17), 0 0 22px rgba(139,92,246,.15) !important;
 }
 div[data-baseweb="select"] > div {
-    background: #17102B; border-color: #514071; border-radius: 12px; color: white;
+    background: #0D0819; border-color: #302344; border-radius: 12px; color: white;
 }
 div[role="radiogroup"] {
     display:flex; flex-wrap:wrap; gap:8px; padding:11px;
-    background:rgba(19,12,37,.94); border:1px solid rgba(167,139,250,.25);
+    background:rgba(9,5,18,.97); border:1px solid rgba(167,139,250,.25);
     border-radius:16px; margin:8px 0 22px;
 }
 div[role="radiogroup"] label {
-    background:#211638; border:1px solid #49366A; border-radius:11px;
+    background:#100A1D; border:1px solid #302044; border-radius:11px;
     padding:8px 14px; margin:0 !important;
 }
 div[role="radiogroup"] label:has(input:checked) {
-    background:linear-gradient(110deg,#6D28D9,#4F46E5,#0E7490);
+    background:linear-gradient(110deg,#32105F,#37308A,#07566B);
     border-color:var(--ss-cyan); box-shadow:0 0 18px rgba(139,92,246,.24);
 }
 [data-testid="stImage"] img {
@@ -106,7 +106,7 @@ div[data-testid="stDataFrame"] { border:1px solid rgba(167,139,250,.25); border-
 hr { border-color:rgba(167,139,250,.20); }
 .guardian-tile {
     backdrop-filter: blur(16px);
-    background: linear-gradient(150deg, rgba(42,25,76,.82), rgba(13,9,29,.97) 76%) !important;
+    background: linear-gradient(150deg, rgba(20,10,38,.88), rgba(6,4,13,.98) 76%) !important;
     border: 1px solid rgba(167,139,250,.42) !important;
     box-shadow: 0 15px 40px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.05) !important;
 }
@@ -1639,11 +1639,11 @@ div[role="radiogroup"] {
     box-shadow:0 8px 28px rgba(0,0,0,.22);
 }
 div[role="radiogroup"] label {
-    background:#211638; border:1px solid #49366A; border-radius:11px;
+    background:#100A1D; border:1px solid #302044; border-radius:11px;
     padding:.5rem .9rem; margin:0 !important;
 }
 div[role="radiogroup"] label:has(input:checked) {
-    background:linear-gradient(110deg,#6D28D9,#4F46E5,#0E7490);
+    background:linear-gradient(110deg,#32105F,#37308A,#07566B);
     border-color:#67E8F9; box-shadow:0 0 18px rgba(139,92,246,.25);
 }
 @media(max-width:640px) { div[role="radiogroup"] label { padding:.4rem .55rem; } }
