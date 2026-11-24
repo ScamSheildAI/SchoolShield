@@ -1442,9 +1442,9 @@ def guardian_page(title, description, detector, samples, label):
         unsafe_allow_html=True
     )
 
-    options = ["Choose an example"] + [
-        f"Example {i + 1}" for i in range(len(samples))
-    ]
+   options = [
+    f"Example {i + 1}" for i in range(len(samples))
+]
     selected = st.selectbox("Try a sample message", options, key=title + "_sample")
     sample = ""
     if selected != "Choose an example":
