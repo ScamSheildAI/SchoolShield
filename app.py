@@ -117,6 +117,49 @@ hr { border-color:rgba(167,139,250,.20); }
     h1 { font-size:2rem !important; }
     div[data-testid="stMetric"] { padding:13px; }
 }
+
+/* Premium Guardian showcase cards */
+.guardian-showcase {
+    min-height: 205px;
+    padding: 22px 20px;
+    border-radius: 20px;
+    background: linear-gradient(145deg, rgba(20,12,38,.96), rgba(7,6,15,.98));
+    border: 1px solid rgba(139,112,214,.34);
+    box-shadow: 0 16px 38px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.045);
+    transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+    position: relative;
+    overflow: hidden;
+}
+.guardian-showcase:hover {
+    transform: translateY(-4px);
+    border-color: rgba(103,232,249,.65);
+    box-shadow: 0 18px 42px rgba(0,0,0,.38), 0 0 25px rgba(96,165,250,.10);
+}
+.guardian-showcase:before {
+    content: "";
+    position: absolute;
+    width: 130px; height: 130px;
+    right: -45px; top: -55px;
+    border-radius: 50%;
+    background: rgba(96,70,160,.16);
+    filter: blur(5px);
+}
+.guardian-showcase .symbol {
+    font-size: 30px; margin-bottom: 12px;
+    filter: drop-shadow(0 0 12px rgba(103,232,249,.24));
+}
+.guardian-showcase .eyebrow {
+    color: #8FEAF5; font-size: 10px; font-weight: 900;
+    letter-spacing: 1.8px; margin-bottom: 7px;
+}
+.guardian-showcase .name {
+    color: #F7F4FF; font-size: 18px; font-weight: 850;
+    margin-bottom: 8px;
+}
+.guardian-showcase .desc {
+    color: #BEB5D2; font-size: 13px; line-height: 1.55;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -1700,6 +1743,38 @@ if page == "Dashboard":
     y.metric("Original examples", "30")
     z.metric("Challenge examples", "120")
     w.metric("Total test examples", "150")
+
+
+    st.markdown("### YOUR THREE GUARDIANS")
+    st.caption("Three focused layers designed to help students recognise common digital-safety risks.")
+    g1, g2, g3 = st.columns(3, gap="medium")
+    with g1:
+        st.markdown("""
+        <div class="guardian-showcase">
+          <div class="symbol">🎣</div>
+          <div class="eyebrow">GUARDIAN 01 / MESSAGE SECURITY</div>
+          <div class="name">Phishing Guardian</div>
+          <div class="desc">Spot suspicious requests, unexpected rewards, pressure tactics and risky links.</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with g2:
+        st.markdown("""
+        <div class="guardian-showcase">
+          <div class="symbol">💬</div>
+          <div class="eyebrow">GUARDIAN 02 / ONLINE WELLBEING</div>
+          <div class="name">Cyberbullying Guardian</div>
+          <div class="desc">Recognise potentially harmful, humiliating, threatening or exclusionary language.</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with g3:
+        st.markdown("""
+        <div class="guardian-showcase">
+          <div class="symbol">🔒</div>
+          <div class="eyebrow">GUARDIAN 03 / PERSONAL DATA</div>
+          <div class="name">Privacy Guardian</div>
+          <div class="desc">Identify possible exposure of passwords, contact details and other private information.</div>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.info(
         "Choose a Guardian from the navigation menu to begin. Groq provides context-aware explanations when enabled; rule-based checks remain a separate backup."
