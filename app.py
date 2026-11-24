@@ -1419,12 +1419,10 @@ def show_gemini_result(title, message, detector, label, ai_result):
 # ============================================================
 
 def guardian_page(title, description, detector, samples, label):
-    guardian_art = {
-        "Phishing Guardian": "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=1000&q=85",
-        "Cyberbullying Guardian": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1000&q=85",
-        "Privacy Guardian": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1000&q=85",
-    }
-    art_url = next((url for name, url in guardian_art.items() if name in title), guardian_art["Privacy Guardian"])
+    # Built-in futuristic Guardian artwork: no extra image files or uploads needed.
+    phishing_art = r'''<svg viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Phishing Guardian digital shield illustration" style="width:100%;height:auto;border-radius:22px;background:#090B1B"><defs><linearGradient id="pbg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#21104B"/><stop offset="1" stop-color="#071B35"/></linearGradient><linearGradient id="psh" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#A78BFA"/><stop offset="1" stop-color="#22D3EE"/></linearGradient><filter id="pg"><feGaussianBlur stdDeviation="12"/></filter></defs><rect width="720" height="470" rx="26" fill="url(#pbg)"/><circle cx="360" cy="220" r="150" fill="#7C3AED" opacity=".18" filter="url(#pg)"/><g fill="none" stroke="#6D5AE8" opacity=".25"><path d="M0 90H720M0 180H720M0 270H720M0 360H720M120 0V470M240 0V470M480 0V470M600 0V470"/></g><path d="M360 76 493 126V230c0 91-56 143-133 180-77-37-133-89-133-180V126Z" fill="#11152E" stroke="url(#psh)" stroke-width="8"/><path d="M360 106 466 145V230c0 70-40 112-106 147-66-35-106-77-106-147V145Z" fill="#171A3C" stroke="#8B5CF6" stroke-width="2"/><path d="M315 208c0-25 20-45 45-45s45 20 45 45v18h-90Z" fill="none" stroke="#67E8F9" stroke-width="9"/><rect x="300" y="220" width="120" height="83" rx="13" fill="#7C3AED" stroke="#C4B5FD" stroke-width="4"/><circle cx="360" cy="258" r="9" fill="#E0F2FE"/><path d="M360 267v16" stroke="#E0F2FE" stroke-width="7" stroke-linecap="round"/><path d="m164 150 28 28m0-28-28 28M530 290l28 28m0-28-28 28" stroke="#22D3EE" stroke-width="5" stroke-linecap="round"/><circle cx="170" cy="310" r="9" fill="#A78BFA"/><circle cx="550" cy="130" r="7" fill="#22D3EE"/><text x="360" y="425" fill="#C4B5FD" font-family="Arial,sans-serif" font-size="18" font-weight="700" text-anchor="middle" letter-spacing="5">VERIFY BEFORE YOU CLICK</text></svg>'''
+    cyber_art = r'''<svg viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cyberbullying Guardian supportive digital conversation illustration" style="width:100%;height:auto;border-radius:22px;background:#090B1B"><defs><linearGradient id="cbg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#241044"/><stop offset="1" stop-color="#071C36"/></linearGradient><linearGradient id="cglow"><stop stop-color="#A78BFA"/><stop offset="1" stop-color="#22D3EE"/></linearGradient><filter id="cg"><feGaussianBlur stdDeviation="15"/></filter></defs><rect width="720" height="470" rx="26" fill="url(#cbg)"/><circle cx="360" cy="220" r="150" fill="#0EA5E9" opacity=".18" filter="url(#cg)"/><g fill="none" stroke="#6474D9" opacity=".2"><path d="M0 100H720M0 200H720M0 300H720M0 400H720M120 0V470M240 0V470M480 0V470M600 0V470"/></g><rect x="150" y="92" width="420" height="260" rx="28" fill="#11152E" stroke="url(#cglow)" stroke-width="5"/><path d="M205 165h190a18 18 0 0 1 18 18v48a18 18 0 0 1-18 18H265l-35 26v-26h-25a18 18 0 0 1-18-18v-48a18 18 0 0 1 18-18Z" fill="#31205B" stroke="#A78BFA" stroke-width="3"/><circle cx="245" cy="207" r="7" fill="#C4B5FD"/><circle cx="278" cy="207" r="7" fill="#C4B5FD"/><circle cx="311" cy="207" r="7" fill="#C4B5FD"/><path d="M325 275h165a18 18 0 0 1 18 18v28a18 18 0 0 1-18 18H385l-34 23v-23h-26a18 18 0 0 1-18-18v-28a18 18 0 0 1 18-18Z" fill="#12354C" stroke="#22D3EE" stroke-width="3"/><path d="m370 302 13 13 27-29" fill="none" stroke="#67E8F9" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><path d="M360 68v-18m-9 9h18M580 370v-18m-9 9h18" stroke="#A78BFA" stroke-width="4" stroke-linecap="round"/><text x="360" y="430" fill="#C4B5FD" font-family="Arial,sans-serif" font-size="18" font-weight="700" text-anchor="middle" letter-spacing="4">KINDNESS. SAFETY. SUPPORT.</text></svg>'''
+    privacy_art_url = "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1000&q=85"
     intro, visual = st.columns([1.35, 0.85], vertical_alignment="center")
     with intro:
         st.markdown("<div style='color:#67E8F9;font-size:12px;font-weight:800;letter-spacing:2px;'>SCHOOLSHIELD / PROTECTION MODULE</div>", unsafe_allow_html=True)
@@ -1432,7 +1430,12 @@ def guardian_page(title, description, detector, samples, label):
         st.write(description)
         st.caption("Explore a fictional example, then review the warning signs and safety guidance.")
     with visual:
-        st.image(art_url, use_container_width=True)
+        if "Phishing Guardian" in title:
+            st.markdown(phishing_art, unsafe_allow_html=True)
+        elif "Cyberbullying Guardian" in title:
+            st.markdown(cyber_art, unsafe_allow_html=True)
+        else:
+            st.image(privacy_art_url, use_container_width=True)
     st.markdown("---")
     st.markdown(
         "<div style='padding:12px 16px;border:1px solid rgba(167,139,250,.28);border-radius:14px;background:linear-gradient(100deg,rgba(124,58,237,.14),rgba(8,145,178,.08));color:#C4B5FD;font-size:12px;font-weight:850;letter-spacing:1.5px;'>✦ GUARDIAN SCAN CONSOLE&nbsp;&nbsp; / &nbsp;&nbsp; FICTIONAL EXAMPLES ONLY</div>",
