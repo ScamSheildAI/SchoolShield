@@ -2031,6 +2031,47 @@ page = st.radio(
     label_visibility="collapsed"
 )
 
+# Animate the content only when switching between the three Guardian modules.
+# Streamlit reruns the script on navigation, so this detects a genuine page change.
+guardian_pages = {
+    "Phishing Guardian",
+    "Cyberbullying Guardian",
+    "Privacy Guardian",
+}
+previous_page = st.session_state.get("schoolshield_previous_page")
+if page in guardian_pages and previous_page in guardian_pages and page != previous_page:
+    st.markdown("""
+    <style>
+    @keyframes ssGuardianEnter {
+        0%   { opacity: 0; transform: translate3d(0, 22px, 0) scale(.992); filter: blur(5px); }
+        55%  { opacity: 1; filter: blur(0); }
+        100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+    }
+    @keyframes ssGuardianSweep {
+        0% { transform: translateX(-110%); opacity: 0; }
+        18% { opacity: .75; }
+        100% { transform: translateX(110%); opacity: 0; }
+    }
+    div[data-testid="stMainBlockContainer"] {
+        animation: ssGuardianEnter .68s cubic-bezier(.2,.75,.25,1) both !important;
+        position: relative;
+    }
+    div[data-testid="stMainBlockContainer"]::after {
+        content: ""; position: fixed; pointer-events: none; z-index: 999;
+        top: 0; left: 0; width: 38%; height: 3px;
+        background: linear-gradient(90deg, transparent, #67e8f9, #a78bfa, transparent);
+        box-shadow: 0 0 18px #22d3ee, 0 0 32px rgba(167,139,250,.55);
+        animation: ssGuardianSweep .72s ease-out both;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        div[data-testid="stMainBlockContainer"] { animation: none !important; }
+        div[data-testid="stMainBlockContainer"]::after { display:none !important; }
+    }
+    </style>
+    <div aria-hidden="true" style="height:0;overflow:hidden">Guardian transition</div>
+    """, unsafe_allow_html=True)
+
+st.session_state.schoolshield_previous_page = page
 st.caption("Student-built educational prototype")
 
 
