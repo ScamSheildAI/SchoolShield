@@ -366,6 +366,127 @@ textarea:focus-visible, [role="radio"]:focus-visible {
     }
 }
 
+
+/* ========================================================
+   COMPATIBILITY OVERRIDES — STREAMLIT HOVER + TRANSITIONS
+   These selectors cover current Streamlit layouts as well
+   as custom guardian cards.
+   ======================================================== */
+
+/* Animate the actual Streamlit content area after reruns. */
+[data-testid="stAppViewContainer"] section.main .block-container,
+section.main .block-container,
+[data-testid="stMainBlockContainer"] {
+    animation: ss-page-arrive .65s ease-out both !important;
+}
+
+/* Common Streamlit card/container surfaces. */
+[data-testid="stVerticalBlockBorderWrapper"],
+[data-testid="stMetric"],
+[data-testid="stExpander"],
+[data-testid="stAlert"],
+[data-testid="stDataFrame"],
+[data-testid="stTable"],
+[data-testid="stPlotlyChart"],
+[data-testid="stImage"],
+.guardian-showcase,
+.guardian-tile {
+    transition:
+        transform .28s cubic-bezier(.2,.75,.25,1),
+        box-shadow .28s ease,
+        border-color .28s ease,
+        filter .28s ease !important;
+}
+
+/* Hovering columns makes dashboard tiles visibly respond too. */
+[data-testid="stHorizontalBlock"] [data-testid="column"] [data-testid="stVerticalBlockBorderWrapper"]:hover,
+[data-testid="stVerticalBlockBorderWrapper"]:hover,
+[data-testid="stMetric"]:hover,
+[data-testid="stExpander"]:hover,
+[data-testid="stAlert"]:hover,
+.guardian-showcase:hover,
+.guardian-tile:hover {
+    transform: translateY(-5px) !important;
+    border-color: rgba(103,232,249,.95) !important;
+    box-shadow:
+        0 14px 36px rgba(0,0,0,.38),
+        0 0 0 1px rgba(103,232,249,.22),
+        0 0 30px rgba(34,211,238,.27) !important;
+    filter: brightness(1.08);
+}
+
+/* Streamlit buttons: make the hover state unmistakable. */
+[data-testid="stBaseButton-primary"],
+[data-testid="stBaseButton-secondary"],
+.stButton > button,
+.stDownloadButton > button,
+.stFormSubmitButton > button {
+    transition: all .22s ease !important;
+}
+[data-testid="stBaseButton-primary"]:hover,
+[data-testid="stBaseButton-secondary"]:hover,
+.stButton > button:hover,
+.stDownloadButton > button:hover,
+.stFormSubmitButton > button:hover {
+    transform: translateY(-3px) scale(1.025) !important;
+    border-color: #67E8F9 !important;
+    box-shadow: 0 0 0 1px rgba(103,232,249,.25),
+                0 0 28px rgba(34,211,238,.38) !important;
+    filter: brightness(1.2) !important;
+}
+
+/* Tabs and radio navigation highlight on pointer hover. */
+button[data-baseweb="tab"],
+div[role="radiogroup"] label {
+    transition: all .22s ease !important;
+}
+button[data-baseweb="tab"]:hover,
+div[role="radiogroup"] label:hover {
+    color: #B8F7FF !important;
+    border-color: #67E8F9 !important;
+    box-shadow: 0 0 20px rgba(34,211,238,.28) !important;
+}
+
+/* Text fields glow on focus, with smooth transitions. */
+textarea, input, [data-baseweb="select"] > div {
+    transition: box-shadow .22s ease, border-color .22s ease !important;
+}
+textarea:focus, input:focus,
+[data-baseweb="select"] > div:focus-within {
+    border-color: #67E8F9 !important;
+    box-shadow: 0 0 0 2px rgba(103,232,249,.22),
+                0 0 25px rgba(34,211,238,.24) !important;
+}
+
+/* A slow ambient scan line across the main app content. */
+section.main .block-container {
+    position: relative;
+}
+section.main .block-container::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    top: 0;
+    left: 0;
+    width: 35%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(103,232,249,.55), transparent);
+    filter: blur(1px);
+    animation: ss-soft-scan 8s ease-in-out infinite;
+    opacity: .35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    section.main .block-container,
+    [data-testid="stMainBlockContainer"] {
+        animation: none !important;
+    }
+    section.main .block-container::after {
+        animation: none !important;
+        display: none !important;
+    }
+}
+
 </style>
 """, unsafe_allow_html=True)
 
