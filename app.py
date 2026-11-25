@@ -239,6 +239,133 @@ hr { border-color:rgba(167,139,250,.20); }
     color: #BEB5D2; font-size: 13px; line-height: 1.55;
 }
 
+
+
+/* ========================================================
+   SCHOOLSHIELD INTERACTIVE MOTION + CURSOR GLOW SYSTEM
+   ======================================================== */
+@keyframes ss-page-arrive {
+    from { opacity: 0; transform: translateY(13px); filter: blur(3px); }
+    to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+@keyframes ss-circuit-drift {
+    0% { background-position: 0 0, 0 0; opacity: .22; }
+    50% { opacity: .42; }
+    100% { background-position: 54px 54px, -54px 54px; opacity: .22; }
+}
+@keyframes ss-soft-scan {
+    0% { transform: translateX(-110%); opacity: 0; }
+    15% { opacity: .45; }
+    85% { opacity: .35; }
+    100% { transform: translateX(110%); opacity: 0; }
+}
+/* Subtle animated circuit-grid atmosphere; never intercepts clicks. */
+.stApp::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      linear-gradient(rgba(103,232,249,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(103,232,249,.035) 1px, transparent 1px);
+    background-size: 54px 54px;
+    mask-image: linear-gradient(to bottom, black, transparent 82%);
+    animation: ss-circuit-drift 18s linear infinite;
+}
+.stApp > header, [data-testid="stSidebar"], .main, [data-testid="stAppViewContainer"] > .main {
+    position: relative; z-index: 1;
+}
+/* Bring the main content in gently on each Streamlit page change. */
+[data-testid="stMainBlockContainer"] > div {
+    animation: ss-page-arrive .48s cubic-bezier(.2,.75,.25,1) both;
+}
+/* Interactive surfaces: lift + cyan edge glow on hover. */
+div[data-testid="stMetric"],
+div[data-testid="stVerticalBlockBorderWrapper"],
+div[data-testid="stExpander"],
+.guardian-showcase, .guardian-tile,
+[data-testid="stImage"] img {
+    transition: transform .24s ease, border-color .24s ease,
+                box-shadow .24s ease, filter .24s ease, background-color .24s ease;
+}
+div[data-testid="stMetric"]:hover,
+div[data-testid="stVerticalBlockBorderWrapper"]:hover,
+div[data-testid="stExpander"]:hover,
+.guardian-showcase:hover, .guardian-tile:hover {
+    transform: translateY(-4px);
+    border-color: rgba(103,232,249,.78) !important;
+    box-shadow: 0 15px 38px rgba(0,0,0,.34),
+                0 0 0 1px rgba(103,232,249,.13),
+                0 0 27px rgba(34,211,238,.16) !important;
+}
+[data-testid="stImage"] img:hover {
+    transform: scale(1.018);
+    border-color: rgba(103,232,249,.72);
+    box-shadow: 0 0 26px rgba(34,211,238,.20);
+}
+/* Buttons get a brighter edge and a restrained glow. */
+.stButton button, .stDownloadButton button, .stFormSubmitButton button,
+[data-testid="stLinkButton"] a {
+    position: relative; overflow: hidden;
+    transition: transform .2s ease, box-shadow .2s ease,
+                border-color .2s ease, filter .2s ease !important;
+}
+.stButton button:hover, .stDownloadButton button:hover,
+.stFormSubmitButton button:hover, [data-testid="stLinkButton"] a:hover {
+    transform: translateY(-3px) scale(1.012) !important;
+    border-color: #67E8F9 !important;
+    filter: brightness(1.16);
+    box-shadow: 0 0 0 1px rgba(103,232,249,.2),
+                0 0 25px rgba(34,211,238,.28),
+                0 10px 26px rgba(0,0,0,.24) !important;
+}
+.stButton button:active, .stDownloadButton button:active,
+.stFormSubmitButton button:active { transform: translateY(0) scale(.985) !important; }
+/* Navigation options glow and slide slightly when hovered. */
+div[role="radiogroup"] label {
+    cursor: pointer;
+    transition: transform .2s ease, border-color .2s ease,
+                box-shadow .2s ease, background .2s ease !important;
+}
+div[role="radiogroup"] label:hover {
+    transform: translateY(-2px);
+    border-color: rgba(103,232,249,.85) !important;
+    box-shadow: 0 0 19px rgba(34,211,238,.19);
+}
+div[role="radiogroup"] label:has(input:checked) {
+    box-shadow: 0 0 0 1px rgba(103,232,249,.18),
+                0 0 22px rgba(34,211,238,.22) !important;
+}
+/* Inputs glow on focus; links brighten on hover. */
+div[data-testid="stTextArea"] textarea,
+div[data-testid="stTextInput"] input,
+div[data-baseweb="select"] > div,
+div[data-testid="stNumberInput"] input {
+    transition: border-color .2s ease, box-shadow .2s ease, background .2s ease !important;
+}
+div[data-testid="stTextArea"] textarea:focus,
+div[data-testid="stTextInput"] input:focus,
+div[data-testid="stNumberInput"] input:focus,
+div[data-baseweb="select"] > div:focus-within {
+    border-color: #67E8F9 !important;
+    box-shadow: 0 0 0 2px rgba(103,232,249,.16),
+                0 0 23px rgba(34,211,238,.19) !important;
+}
+.stMarkdown a { transition: color .18s ease, text-shadow .18s ease; }
+.stMarkdown a:hover { color: #B8F7FF !important; text-shadow: 0 0 12px rgba(103,232,249,.65); }
+/* Focus indicators also work for keyboard navigation. */
+button:focus-visible, a:focus-visible, input:focus-visible,
+textarea:focus-visible, [role="radio"]:focus-visible {
+    outline: 2px solid #67E8F9 !important;
+    outline-offset: 3px !important;
+}
+/* Avoid motion for visitors who request reduced animation. */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+    }
+}
+
 </style>
 """, unsafe_allow_html=True)
 
