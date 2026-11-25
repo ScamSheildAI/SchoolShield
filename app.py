@@ -259,6 +259,21 @@ hr { border-color:rgba(167,139,250,.20); }
     85% { opacity: .35; }
     100% { transform: translateX(110%); opacity: 0; }
 }
+/* Continuous ambient protection effects: looping light nodes and circuit pulses. */
+@keyframes ss-ambient-glow {
+    0%, 100% { background-position: 0% 0%, 100% 100%, 50% 50%; opacity: .28; }
+    50% { background-position: 18% 22%, 82% 72%, 50% 50%; opacity: .58; }
+}
+@keyframes ss-orbit-pulse {
+    0%, 100% { opacity: .12; transform: scale(.88); }
+    50% { opacity: .42; transform: scale(1.12); }
+}
+@keyframes ss-signal-travel {
+    0% { transform: translateX(-120vw); opacity: 0; }
+    12% { opacity: .38; }
+    88% { opacity: .28; }
+    100% { transform: translateX(120vw); opacity: 0; }
+}
 /* Subtle animated circuit-grid atmosphere; never intercepts clicks. */
 .stApp::before {
     content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
@@ -268,6 +283,16 @@ hr { border-color:rgba(167,139,250,.20); }
     background-size: 54px 54px;
     mask-image: linear-gradient(to bottom, black, transparent 82%);
     animation: ss-circuit-drift 18s linear infinite;
+}
+/* Ambient colour fields loop quietly behind every Guardian page. */
+.stApp::after {
+    content: ""; position: fixed; inset: -12%; pointer-events: none; z-index: 0;
+    background-image:
+      radial-gradient(circle at 18% 28%, rgba(34,211,238,.16), transparent 19%),
+      radial-gradient(circle at 82% 72%, rgba(139,92,246,.17), transparent 21%),
+      radial-gradient(circle at 52% 48%, rgba(59,130,246,.07), transparent 28%);
+    background-size: 115% 115%, 115% 115%, 100% 100%;
+    animation: ss-ambient-glow 13s ease-in-out infinite;
 }
 .stApp > header, [data-testid="stSidebar"], .main, [data-testid="stAppViewContainer"] > .main {
     position: relative; z-index: 1;
@@ -485,6 +510,7 @@ section.main .block-container::after {
         animation: none !important;
         display: none !important;
     }
+    .stApp::after { animation: none !important; }
 }
 
 </style>
@@ -2052,11 +2078,12 @@ if page in guardian_pages and previous_page in guardian_pages and page != previo
         18% { opacity: .75; }
         100% { transform: translateX(110%); opacity: 0; }
     }
-    div[data-testid="stMainBlockContainer"] {
+    div[data-testid="stMainBlockContainer"], section.main .block-container {
         animation: ssGuardianEnter .68s cubic-bezier(.2,.75,.25,1) both !important;
         position: relative;
     }
-    div[data-testid="stMainBlockContainer"]::after {
+    div[data-testid="stMainBlockContainer"]::after,
+    section.main .block-container::after {
         content: ""; position: fixed; pointer-events: none; z-index: 999;
         top: 0; left: 0; width: 38%; height: 3px;
         background: linear-gradient(90deg, transparent, #67e8f9, #a78bfa, transparent);
@@ -2064,8 +2091,9 @@ if page in guardian_pages and previous_page in guardian_pages and page != previo
         animation: ssGuardianSweep .72s ease-out both;
     }
     @media (prefers-reduced-motion: reduce) {
-        div[data-testid="stMainBlockContainer"] { animation: none !important; }
-        div[data-testid="stMainBlockContainer"]::after { display:none !important; }
+        div[data-testid="stMainBlockContainer"], section.main .block-container { animation: none !important; }
+        div[data-testid="stMainBlockContainer"]::after,
+        section.main .block-container::after { display:none !important; }
     }
     </style>
     <div aria-hidden="true" style="height:0;overflow:hidden">Guardian transition</div>
