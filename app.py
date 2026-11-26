@@ -85,4 +85,37 @@ if not st.session_state.schoolshield_intro_complete:
     st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
     left, center, right = st.columns([1, 1.4, 1])
     with center:
-        if st.button("ENTER SCHOOLSHIELD  →",
+        if st.button("ENTER SCHOOLSHIELD  →", use_container_width=True):
+            st.session_state.schoolshield_intro_complete = True
+            st.rerun()
+
+
+# ============================================================
+# MAIN SCHOOLSHIELD APPLICATION
+# ============================================================
+if st.session_state.schoolshield_intro_complete:
+    st.title("🛡️ SchoolShield")
+    st.caption("One Platform. Three Layers of Protection.")
+
+    tab1, tab2, tab3 = st.tabs([
+        "Phishing Guardian",
+        "Cyberbullying Guardian",
+        "Privacy Guardian",
+    ])
+
+    with tab1:
+        st.subheader("Phishing Guardian")
+        msg_input = st.text_area("Paste a suspicious message, email, or link:")
+        if st.button("Analyze Message", key="phishing_btn"):
+            if msg_input.strip():
+                st.info("Analysis complete. Add your detection rules or model here.")
+            else:
+                st.warning("Please enter text to analyze.")
+
+    with tab2:
+        st.subheader("Cyberbullying Guardian")
+        st.write("Monitor and flag harmful or abusive messages.")
+
+    with tab3:
+        st.subheader("Privacy Guardian")
+        st.write("Check for exposed personal or sensitive student information.")
